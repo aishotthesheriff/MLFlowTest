@@ -11,7 +11,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# edit .env with your Databricks host/token and OPENAI_API_KEY
+# Option A: set DATABRICKS_HOST/TOKEN in .env, or use ~/.databrickscfg (no external LLM key)
 ```
 
 ## Run
@@ -22,6 +22,20 @@ python trace_example.py
 ```
 
 Then in Databricks: **Experiments** → open the experiment (default `/Shared/my-first-trace`) → **Traces** tab.
+
+## Demo kit
+
+A ~7-minute live demo of the tracing, failure, metrics, and evaluation experiments. Follows the same pattern as the other demo stacks (`DEMO_SCRIPT.md`, `DEMO_SUMMARY_AND_TALK_TRACK.md`, `DEMO_DECK.html`, launcher).
+
+```bash
+./start_demo.sh --check-only   # read-only preflight: auth, experiment, evidence traces, scorers
+./start_demo.sh                # preflight + open the deck and the Databricks Traces tab
+```
+
+- [DEMO.md](DEMO.md) — overview and quick start
+- [DEMO_SCRIPT.md](DEMO_SCRIPT.md) — full run-of-show with pre-flight and troubleshooting
+- [DEMO_SUMMARY_AND_TALK_TRACK.md](DEMO_SUMMARY_AND_TALK_TRACK.md) — one-page summary and 2–3 minute talk track
+- [DEMO_DECK.html](DEMO_DECK.html) — minimal self-contained companion deck
 
 ## Lab book
 
