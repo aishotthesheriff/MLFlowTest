@@ -27,7 +27,8 @@ A living lab notebook for Databricks MLflow 3 GenAI tracing experiments in this 
 | Tracking | `mlflow.set_tracking_uri("databricks")` → traces stored in Databricks workspace |
 | Default experiment | `/Shared/my-first-trace` (override via `MLFLOW_EXPERIMENT_NAME`) |
 | Sample LLM | Databricks FM endpoint `databricks-gpt-oss-20b` via `ChatDatabricks` (no external key); override with `DATABRICKS_MODEL_ENDPOINT` |
-| Key scripts | `trace_example.py`, `trace_manual_spans.py`, `trace_multi_turn.py`, `trace_errors.py`, `analyze_trace_metrics.py`, `.env.example`, `requirements.txt`, `README.md` |
+| Judge model | `databricks` managed judge (MLflow default on Databricks tracking); no external key |
+| Key scripts | `trace_example.py`, `trace_manual_spans.py`, `trace_multi_turn.py`, `trace_errors.py`, `analyze_trace_metrics.py`, `evaluate_traces.py`, `.env.example`, `requirements.txt`, `README.md` |
 
 > Update this table when dependencies, workspace targets, models, or auth method change.
 
@@ -66,6 +67,7 @@ View traces: Databricks **Experiments** → experiment (default `/Shared/my-firs
 | 004 | 2026-11-18 | Multi-turn conversation tracing (F-005) | Completed | `/Shared/my-first-trace` | `trace_multi_turn.py`, 3 turns, shared `session_id`, per-turn root spans + autolog | Success: 3 traces in session `lab-f005-1795028845`; context growth 0→2→4 msgs; turn 3 recalled SF | [004-multi-turn-tracing.md](experiments/004-multi-turn-tracing.md) |
 | 005 | 2026-11-18 | Error/failure tracing (F-007) | Completed | `/Shared/my-first-trace` | `trace_errors.py`, tool error / unhandled exception / handled error cases | Success: 3 traces; unhandled → trace ERROR + exception events; handled → span ERROR only; `status` filter works | [005-error-tracing.md](experiments/005-error-tracing.md) |
 | 006 | 2026-11-18 | Latency, token & cost analysis (F-008) | Completed | `/Shared/my-first-trace` | `analyze_trace_metrics.py`, read-only aggregation over 17 traces | Success: per-scenario latency/token/cost summary; slowest trace `tr-983651f7eb6bf22274142b9362c21858` (4304 ms, two ChatOpenAI spans); most expensive `tr-66e408aab933cac6feb63ec91b042abe` ($0.000121) | [006-latency-cost-analysis.md](experiments/006-latency-cost-analysis.md) |
+| 007 | 2026-11-18 | GenAI evaluation on existing traces (F-009) | Completed | `/Shared/my-first-trace` | `evaluate_traces.py`, precomputed mode, 3 scorers (LLM judge + 2 deterministic) | Success: eval run `345d6069efe64933a8d04e350a264381`, 11 records × 3 scorers, all means 1.0, 0 unscored/errored | [007-genai-evaluation.md](experiments/007-genai-evaluation.md) |
 
 **Status legend:** Planned · In progress · Completed · Blocked · Abandoned
 
@@ -82,6 +84,7 @@ Individual writeups live in [`docs/experiments/`](experiments/):
 - [004-multi-turn-tracing.md](experiments/004-multi-turn-tracing.md) — session grouping + per-turn I/O across 3 turns
 - [005-error-tracing.md](experiments/005-error-tracing.md) — tool errors, unhandled exceptions, handled errors
 - [006-latency-cost-analysis.md](experiments/006-latency-cost-analysis.md) — latency percentiles, token/cost totals, span hotspot analysis
+- [007-genai-evaluation.md](experiments/007-genai-evaluation.md) — precomputed evaluation, registered scorers, row-level assessments
 
 ---
 
@@ -106,12 +109,12 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | F-006 | Tool/use-case expansion (RAG/retrieval) | Retrieval steps appear as spans with useful inputs/outputs for debugging relevance. | High | M-L | Retriever/vector store or mock retriever | Proposed | Trace retriever + generator; evaluate grounding. |
 | F-007 | Error/failure tracing | Failures (tool errors, model errors, timeouts) produce diagnosable traces. | High | S-M | Intentional failure cases | Completed (exp 005) | Tool/unhandled errors → trace ERROR + exception events; handled → span ERROR only; partial spans retained. |
 | F-008 | Latency and token/cost analysis | Trace metadata is sufficient to identify slow/expensive spans. | Medium | S-M | Runs with usage data | Completed (exp 006) | `TraceInfo.execution_time_ms`/`token_usage`/`cost` suffice; 17 traces aggregated; slowest ~100% LLM-bound; null usage on no-LLM-call traces. |
-| F-009 | MLflow GenAI evaluation on traces | Automated scorers/judges can assess quality from traced runs. | High | M-L | Dataset/scorers setup | Proposed | Define criteria, run evaluation, track scores over iterations. |
+| F-009 | MLflow GenAI evaluation on traces | Automated scorers/judges can assess quality from traced runs. | High | M-L | Dataset/scorers setup | Completed (exp 007) | Precomputed mode over 11 traces; managed `databricks` judge + 2 deterministic scorers; all scored, no errors; uniform 1.0 reflecting known-good small sample. |
 | F-010 | Trace tagging, metadata, and searchability | Consistent tags (env, feature, git SHA, scenario) make traces easy to filter/debug. | Medium | S | — | Proposed | Set tags/metadata in code; document naming conventions. Exp 003 set `lab_book`/`scenario`/`model_endpoint` tags — reuse as convention. |
 | F-011 | Unity Catalog trace storage | UC-backed trace storage improves governance/queryability for this workflow. | Medium | M | UC permissions/config | Proposed | Follow [trace-unity-catalog](https://docs.databricks.com/aws/en/mlflow3/genai/tracing/trace-unity-catalog); compare limits/capabilities. |
 | F-012 | Experiment organization strategy | Separate dev/test/prod experiments and naming conventions reduce clutter and risk. | Medium | S | Team/workspace conventions | Proposed | Propose path scheme, tags, and retention expectations. |
 | F-013 | Production-style monitoring/alerting workflow | Traces can feed dashboards/alerts for ongoing quality and performance monitoring. | Medium | L | Production-like workload | Proposed | Identify key signals and Databricks/Lakehouse integration path. |
-| F-014 | Prompt/version comparison (A/B) | Side-by-side traced runs make prompt/model changes measurable. | Medium | M | Variant configs | Proposed | Hold inputs constant; compare outputs, traces, and eval scores. |
+| F-014 | Prompt/version comparison (A/B) | Side-by-side traced runs make prompt/model changes measurable. | Medium | M | Variant configs | Proposed | Hold inputs constant; compare outputs, traces, and eval scores. Reuse `evaluate_traces.py` suite. |
 
 > Add new ideas freely; include a short hypothesis and dependency so they are actionable.
 
@@ -120,7 +123,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 - [x] Which Databricks Foundation Model serving endpoint should be the default for keyless/local-auth runs? → using `databricks-gpt-oss-20b` (exp 002); revisit if quality/latency favors another.
 - [ ] Should traces live in shared experiments (`/Shared/...`) or user/project-specific paths?
 - [ ] Do we need Unity Catalog-backed trace storage for this project now?
-- [ ] What evaluation criteria/scorers matter first (correctness, tool use, latency, cost, safety)?
+- [ ] What evaluation criteria/scorers matter first (correctness, tool use, latency, cost, safety)? → started with relevance, expected-city outcome, length (exp 007).
 - [ ] Should we pin dependency versions for reproducibility once experiments stabilize?
 
 ## 8. Learnings & decision log
@@ -136,6 +139,8 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-18 | Multi-turn = one trace per turn grouped by `session_id`; use `span.trace_id` for per-turn IDs | `get_last_active_trace_id()` is off by one inside an active span; session stored in request metadata + tags | Verified in exp 004 (3 traces, session `lab-f005-1795028845`) |
 | 2026-11-18 | Unhandled errors → trace ERROR with exception events; handled errors → span ERROR only | `@mlflow.trace` captures type/message/stacktrace automatically; `record_exception` + `set_status(ERROR)` for handled cases | Verified in exp 005; use `status = 'ERROR'` (not `state`) in `search_traces` filters |
 | 2026-11-18 | Latency/token/cost come from `TraceInfo.execution_time_ms`, `token_usage`, `cost`; segment by scenario/status | No-LLM-call traces have null usage/cost and fast latency, so mixed aggregates mislead | Verified in exp 006; `analyze_trace_metrics.py` is the reusable read-only harness |
+| 2026-11-18 | Precomputed GenAI evaluation works over existing traces with managed `databricks` judge + deterministic scorers | No agent re-run, dataset, or external key needed; row-level results live in the eval run | Verified in exp 007 (11 records, 0 errored); exclude answerless error traces and validate scorers on known-bad inputs |
+| 2026-11-18 | Normalize Unicode whitespace and use word boundaries in deterministic text scorers | Model output uses U+202F in "San Francisco" and "sf." at sentence end, causing false negatives | Fixed in exp 007 pilot; `expectations` also pollute `result.passed`, so count real scorer verdicts |
 
 ## 9. Change log
 
@@ -148,6 +153,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-18 | Added `trace_multi_turn.py` and experiment 004 | F-005 completed; 3-turn session grouping and context recall verified |
 | 2026-11-18 | Added `trace_errors.py` and experiment 005 | F-007 completed; 3 error signatures verified with exception events and filtering |
 | 2026-11-18 | Added `analyze_trace_metrics.py` and experiment 006 | F-008 completed; 17 traces aggregated by scenario with latency/token/cost and span hotspot breakdown |
+| 2026-11-18 | Added `evaluate_traces.py` and experiment 007 | F-009 completed; 3 registered scorers, 11 records scored, pilot bugs fixed and documented |
 
 ---
 *Keep entries factual, link to traces/evidence, and prefer small reproducible experiments over large undocumented changes.*
