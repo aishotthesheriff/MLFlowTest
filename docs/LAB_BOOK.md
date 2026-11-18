@@ -27,7 +27,7 @@ A living lab notebook for Databricks MLflow 3 GenAI tracing experiments in this 
 | Tracking | `mlflow.set_tracking_uri("databricks")` → traces stored in Databricks workspace |
 | Default experiment | `/Shared/my-first-trace` (override via `MLFLOW_EXPERIMENT_NAME`) |
 | Sample LLM | Databricks FM endpoint `databricks-gpt-oss-20b` via `ChatDatabricks` (no external key); override with `DATABRICKS_MODEL_ENDPOINT` |
-| Key scripts | `trace_example.py`, `trace_manual_spans.py`, `trace_multi_turn.py`, `trace_errors.py`, `.env.example`, `requirements.txt`, `README.md` |
+| Key scripts | `trace_example.py`, `trace_manual_spans.py`, `trace_multi_turn.py`, `trace_errors.py`, `analyze_trace_metrics.py`, `.env.example`, `requirements.txt`, `README.md` |
 
 > Update this table when dependencies, workspace targets, models, or auth method change.
 
@@ -65,6 +65,7 @@ View traces: Databricks **Experiments** → experiment (default `/Shared/my-firs
 | 003 | 2026-11-18 | Manual/custom spans for non-autologged logic | Completed | `/Shared/my-first-trace` | `trace_manual_spans.py`, `@mlflow.trace` boundary + pre/post spans, autolog kept on | Success: trace `tr-0cb5f6d26d3dad7fc32c9da9cad10131`, 10 spans (manual + autolog nested), I/O/attrs/tags captured | [003-manual-spans.md](experiments/003-manual-spans.md) |
 | 004 | 2026-11-18 | Multi-turn conversation tracing (F-005) | Completed | `/Shared/my-first-trace` | `trace_multi_turn.py`, 3 turns, shared `session_id`, per-turn root spans + autolog | Success: 3 traces in session `lab-f005-1795028845`; context growth 0→2→4 msgs; turn 3 recalled SF | [004-multi-turn-tracing.md](experiments/004-multi-turn-tracing.md) |
 | 005 | 2026-11-18 | Error/failure tracing (F-007) | Completed | `/Shared/my-first-trace` | `trace_errors.py`, tool error / unhandled exception / handled error cases | Success: 3 traces; unhandled → trace ERROR + exception events; handled → span ERROR only; `status` filter works | [005-error-tracing.md](experiments/005-error-tracing.md) |
+| 006 | 2026-11-18 | Latency, token & cost analysis (F-008) | Completed | `/Shared/my-first-trace` | `analyze_trace_metrics.py`, read-only aggregation over 17 traces | Success: per-scenario latency/token/cost summary; slowest trace `tr-983651f7eb6bf22274142b9362c21858` (4304 ms, two ChatOpenAI spans); most expensive `tr-66e408aab933cac6feb63ec91b042abe` ($0.000121) | [006-latency-cost-analysis.md](experiments/006-latency-cost-analysis.md) |
 
 **Status legend:** Planned · In progress · Completed · Blocked · Abandoned
 
@@ -80,6 +81,7 @@ Individual writeups live in [`docs/experiments/`](experiments/):
 - [003-manual-spans.md](experiments/003-manual-spans.md) — manual @mlflow.trace spans for pre/post-processing
 - [004-multi-turn-tracing.md](experiments/004-multi-turn-tracing.md) — session grouping + per-turn I/O across 3 turns
 - [005-error-tracing.md](experiments/005-error-tracing.md) — tool errors, unhandled exceptions, handled errors
+- [006-latency-cost-analysis.md](experiments/006-latency-cost-analysis.md) — latency percentiles, token/cost totals, span hotspot analysis
 
 ---
 
@@ -103,7 +105,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | F-005 | Multi-turn conversation tracing | Multi-turn agent state/session behavior is captured clearly across turns. | High | M | Conversation script | Completed (exp 004) | One trace/turn under shared `session_id`; context growth + cross-turn recall verified. |
 | F-006 | Tool/use-case expansion (RAG/retrieval) | Retrieval steps appear as spans with useful inputs/outputs for debugging relevance. | High | M-L | Retriever/vector store or mock retriever | Proposed | Trace retriever + generator; evaluate grounding. |
 | F-007 | Error/failure tracing | Failures (tool errors, model errors, timeouts) produce diagnosable traces. | High | S-M | Intentional failure cases | Completed (exp 005) | Tool/unhandled errors → trace ERROR + exception events; handled → span ERROR only; partial spans retained. |
-| F-008 | Latency and token/cost analysis | Trace metadata is sufficient to identify slow/expensive spans. | Medium | S-M | Runs with usage data | Proposed | Compare prompts/models; document where metrics appear in UI. |
+| F-008 | Latency and token/cost analysis | Trace metadata is sufficient to identify slow/expensive spans. | Medium | S-M | Runs with usage data | Completed (exp 006) | `TraceInfo.execution_time_ms`/`token_usage`/`cost` suffice; 17 traces aggregated; slowest ~100% LLM-bound; null usage on no-LLM-call traces. |
 | F-009 | MLflow GenAI evaluation on traces | Automated scorers/judges can assess quality from traced runs. | High | M-L | Dataset/scorers setup | Proposed | Define criteria, run evaluation, track scores over iterations. |
 | F-010 | Trace tagging, metadata, and searchability | Consistent tags (env, feature, git SHA, scenario) make traces easy to filter/debug. | Medium | S | — | Proposed | Set tags/metadata in code; document naming conventions. Exp 003 set `lab_book`/`scenario`/`model_endpoint` tags — reuse as convention. |
 | F-011 | Unity Catalog trace storage | UC-backed trace storage improves governance/queryability for this workflow. | Medium | M | UC permissions/config | Proposed | Follow [trace-unity-catalog](https://docs.databricks.com/aws/en/mlflow3/genai/tracing/trace-unity-catalog); compare limits/capabilities. |
@@ -133,6 +135,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-18 | Manual `@mlflow.trace` spans compose with autolog; use an outer application-boundary span | Adds visible pre/post-processing steps and a stable place for trace tags without duplicating autologged spans | Verified in exp 003 (`tr-0cb5f6d26d3dad7fc32c9da9cad10131`); adopt as pattern for future scripts |
 | 2026-11-18 | Multi-turn = one trace per turn grouped by `session_id`; use `span.trace_id` for per-turn IDs | `get_last_active_trace_id()` is off by one inside an active span; session stored in request metadata + tags | Verified in exp 004 (3 traces, session `lab-f005-1795028845`) |
 | 2026-11-18 | Unhandled errors → trace ERROR with exception events; handled errors → span ERROR only | `@mlflow.trace` captures type/message/stacktrace automatically; `record_exception` + `set_status(ERROR)` for handled cases | Verified in exp 005; use `status = 'ERROR'` (not `state`) in `search_traces` filters |
+| 2026-11-18 | Latency/token/cost come from `TraceInfo.execution_time_ms`, `token_usage`, `cost`; segment by scenario/status | No-LLM-call traces have null usage/cost and fast latency, so mixed aggregates mislead | Verified in exp 006; `analyze_trace_metrics.py` is the reusable read-only harness |
 
 ## 9. Change log
 
@@ -144,6 +147,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-18 | Added `trace_manual_spans.py` and experiment 003 | F-003 completed; manual + autolog spans verified in one 10-span trace |
 | 2026-11-18 | Added `trace_multi_turn.py` and experiment 004 | F-005 completed; 3-turn session grouping and context recall verified |
 | 2026-11-18 | Added `trace_errors.py` and experiment 005 | F-007 completed; 3 error signatures verified with exception events and filtering |
+| 2026-11-18 | Added `analyze_trace_metrics.py` and experiment 006 | F-008 completed; 17 traces aggregated by scenario with latency/token/cost and span hotspot breakdown |
 
 ---
 *Keep entries factual, link to traces/evidence, and prefer small reproducible experiments over large undocumented changes.*
