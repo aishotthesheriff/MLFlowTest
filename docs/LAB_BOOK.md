@@ -75,6 +75,8 @@ View traces: Databricks **Experiments** → experiment (default `/Shared/my-firs
 
 ## 5. Detailed experiment notes
 
+Consolidated cross-experiment reference: [FINDINGS_AND_LEARNINGS.md](FINDINGS_AND_LEARNINGS.md) — fixes, platform findings, and learnings.
+
 Individual writeups live in [`docs/experiments/`](experiments/):
 
 - [TEMPLATE.md](experiments/TEMPLATE.md) — copy for new experiments

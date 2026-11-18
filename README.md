@@ -26,6 +26,7 @@ Then in Databricks: **Experiments** → open the experiment (default `/Shared/my
 ## Lab book
 
 - [docs/LAB_BOOK.md](docs/LAB_BOOK.md) — experiment log, environment snapshot, ideas/backlog for future experiments
+- [docs/FINDINGS_AND_LEARNINGS.md](docs/FINDINGS_AND_LEARNINGS.md) — consolidated fixes, findings, and learnings across all experiments
 - [docs/experiments/](docs/experiments/) — per-experiment writeups and template ([001-first-trace.md](docs/experiments/001-first-trace.md), [002-foundation-model.md](docs/experiments/002-foundation-model.md), [003-manual-spans.md](docs/experiments/003-manual-spans.md), [004-multi-turn-tracing.md](docs/experiments/004-multi-turn-tracing.md), [005-error-tracing.md](docs/experiments/005-error-tracing.md), [006-latency-cost-analysis.md](docs/experiments/006-latency-cost-analysis.md), [007-genai-evaluation.md](docs/experiments/007-genai-evaluation.md))
 
 ### Optional experiments
