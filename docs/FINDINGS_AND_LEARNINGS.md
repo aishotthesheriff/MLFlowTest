@@ -4,6 +4,8 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 
 **Last updated:** 2026-11-18 · **Workspace:** `/Users/yourbabes/dev/Databricks/MLFlowTest` · **Experiment:** `/Shared/my-first-trace` (`1675992194464286`)
 
+**Second brain copy:** the same material is ingested into the ObsidiBin vault as `~/dev/VAULT/ObsidiBin/raw/notes/2026-11-18-mlflow-genai-tracing-findings.md`, with wiki summaries `MLFlowTest GenAI Tracing Lab` and `MLflow GenAI Tracing Learnings`. This repo file remains the canonical source; if they diverge, update the raw vault note to match.
+
 ---
 
 ## Quick reference: symptom → cause → fix
