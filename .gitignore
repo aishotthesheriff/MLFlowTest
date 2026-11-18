@@ -11,5 +11,9 @@ __pycache__/
 # GitNexus index (generated)
 .gitnexus/
 
+# Local MLflow stores (exploratory / screenshot capture)
+mlflow.db
+mlruns/
+
 # OS files
 .DS_Store

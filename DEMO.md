@@ -38,7 +38,7 @@ Open **Tab 1** at `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments
 | --- | --- |
 | `DEMO_SCRIPT.md` | Full run-of-show: pre-flight, acts, exact commands, troubleshooting |
 | `DEMO_SUMMARY_AND_TALK_TRACK.md` | One-page executive summary + 2–3 minute talk track |
-| `DEMO_DECK.html` | Minimal self-contained slide deck (keys: `→` next, `N` notes, `F` full screen) |
+| `DEMO_DECK.html` | 7-slide deck with real MLflow UI screenshots (keys: `→` next, `N` notes, `F` full screen); images live in `docs/demo/screenshots/` |
 | `start_demo.sh` | Read-only preflight and tab opener (`--check-only`) |
 
 ## 3. If something goes wrong

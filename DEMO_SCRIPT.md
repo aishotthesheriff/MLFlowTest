@@ -2,7 +2,7 @@
 
 **Total Runtime:** ~7 minutes (~9 minutes with optional Act 5B). For a 4-minute cut, run Act 1 and Act 5 only.
 
-**Story shape:** show the result first, explain it second, prove it third. Companion deck: `DEMO_DECK.html` (minimal — cue slides point to the terminal and the Databricks Traces tab).
+**Story shape:** show the result first, explain it second, prove it third. Companion deck: `DEMO_DECK.html` (7 slides with real MLflow UI screenshots from the experiment — see `docs/demo/README.md` for provenance). The deck is a visual reference; the terminal and the Databricks Traces tab remain the live screens.
 
 | Act | What the audience sees | Time |
 | --- | --- | --- |
@@ -184,7 +184,7 @@ Expected: `Session ID: lab-f007-…` and three trace IDs (tool error, unhandled 
 
 > "Seven experiments in one afternoon: keyless tracing, manual spans, multi-turn sessions, failures you can diagnose, latency and cost from the trace metadata, and an evaluation harness over stored traces. The artifact is a repeatable measurement loop — the lab book, the findings doc, and three runnable scripts. The limits are explicit: toy agent, 11 answers, no known-bad set in the full run yet. That is the next experiment."
 
-Then open Q&A with `DEMO_DECK.html` slide 6 up and the Traces tab still open.
+Then open Q&A with `DEMO_DECK.html` slide 7 up and the Traces tab still open.
 
 ---
 

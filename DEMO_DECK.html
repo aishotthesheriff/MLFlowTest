@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MLFlowTest — GenAI tracing you can prove</title>
 <!--
-  Minimal companion deck for DEMO_SCRIPT.md and DEMO_SUMMARY_AND_TALK_TRACK.md.
-  Self-contained: no network, no CDN. Open in any browser.
+  Companion deck for DEMO_SCRIPT.md and DEMO_SUMMARY_AND_TALK_TRACK.md.
+  No network, no CDN. Screenshots are real MLflow UI captures from the
+  Databricks experiment, replayed into a local MLflow store for capture;
+  see docs/demo/screenshots/ and README.md.
   Keys: Right/Space = next, Left = back, Home/End, N = notes, F = full screen.
-  Slides marked LIVE mean: switch to the terminal or the Databricks Traces tab.
 -->
 <style>
   :root {
@@ -20,30 +21,43 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: #05070a; color: var(--text); font-family: var(--sans); overflow: hidden; }
   #stage { position: absolute; top: 50%; left: 50%; width: 1600px; height: 900px; transform-origin: center center; }
-  .slide { position: absolute; inset: 0; display: none; flex-direction: column; padding: 76px 96px 84px;
+  .slide { position: absolute; inset: 0; display: none; flex-direction: column; padding: 60px 96px 72px;
            background: radial-gradient(900px 600px at 88% -10%, rgba(255,107,61,0.10), transparent 65%), var(--bg); }
   .slide.active { display: flex; }
-  .kicker { font-size: 20px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 18px; }
-  h1 { font-size: 66px; line-height: 1.08; margin: 0 0 26px; letter-spacing: -.01em; }
-  h2 { font-size: 52px; line-height: 1.12; margin: 0 0 30px; letter-spacing: -.01em; }
-  p, li { font-size: 28px; line-height: 1.45; }
+  .kicker { font-size: 19px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 12px; }
+  h1 { font-size: 66px; line-height: 1.08; margin: 0 0 22px; letter-spacing: -.01em; }
+  h2 { font-size: 44px; line-height: 1.12; margin: 0 0 18px; letter-spacing: -.01em; }
+  h3 { font-size: 22px; margin: 0 0 10px; color: var(--accent); }
+  p, li { font-size: 25px; line-height: 1.42; }
   .muted { color: var(--muted); }
+  .small { font-size: 19px; }
   .grow { flex: 1; }
-  .row { display: flex; gap: 28px; }
+  .row { display: flex; gap: 24px; }
   .col { flex: 1; min-width: 0; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 26px 30px; }
-  .card p, .card li { font-size: 23px; }
-  .big { font-size: 88px; font-weight: 800; line-height: 1; }
-  .label { font-size: 19px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-top: 10px; }
-  .tag { display: inline-block; font-size: 18px; font-weight: 650; padding: 7px 15px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; }
+  .card p, .card li { font-size: 21px; }
+  .big { font-size: 68px; font-weight: 800; line-height: 1; }
+  .label { font-size: 17px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-top: 8px; }
+  .tag { display: inline-block; font-size: 17px; font-weight: 650; padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
   code, .mono { font-family: var(--mono); font-size: .85em; background: rgba(255,255,255,.06); padding: 3px 8px; border-radius: 6px; }
   .good { color: var(--good); font-weight: 700; } .bad { color: var(--bad); font-weight: 700; }
-  .callout { border-left: 6px solid var(--accent); background: rgba(255,107,61,.08); padding: 18px 26px; border-radius: 0 12px 12px 0; font-size: 25px; }
-  .footer { position: absolute; left: 96px; right: 96px; bottom: 26px; display: flex; justify-content: space-between; font-size: 16px; color: #5b687a; }
-  .live { justify-content: center; align-items: center; text-align: center; background: radial-gradient(900px 600px at 50% 40%, rgba(255,107,61,.18), transparent 70%), #070b11; }
-  .live .badge { font-size: 22px; font-weight: 800; letter-spacing: .2em; color: #170b06; background: var(--accent); padding: 10px 22px; border-radius: 999px; margin-bottom: 34px; }
-  .live .prompt { font-family: var(--mono); font-size: 29px; background: var(--panel); border: 1px solid #6b3a27; border-radius: 14px; padding: 26px 34px; }
-  .live .where { margin-top: 28px; font-size: 24px; color: var(--muted); }
+  .callout { border-left: 6px solid var(--accent); background: rgba(255,107,61,.08); padding: 14px 22px; border-radius: 0 12px 12px 0; font-size: 21px; }
+  .footer { position: absolute; left: 96px; right: 96px; bottom: 22px; display: flex; justify-content: space-between; font-size: 15px; color: #5b687a; }
+  .bg-shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .13; z-index: 0; }
+  .slide > *:not(.bg-shot) { position: relative; z-index: 1; }
+  .frame { position: relative; border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+           background: #0a0e14; box-shadow: 0 16px 38px rgba(0,0,0,.42); flex-shrink: 0; }
+  .frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .frame .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 16px 10px;
+                background: linear-gradient(transparent, rgba(4,7,11,.94)); font-size: 16px; color: #dce5f2; }
+  .frame .badge { position: absolute; top: 10px; left: 10px; font-size: 13px; font-weight: 800; letter-spacing: .08em;
+                  padding: 5px 11px; border-radius: 6px; background: rgba(5,8,12,.82); border: 1px solid var(--line); }
+  .frame.half { width: 688px; height: 387px; }
+  .frame.third { flex: 1; height: 258px; }
+  .frame.wide { width: 1040px; height: 585px; margin: 0 auto; }
+  .frame.medium { width: 900px; height: 506px; }
+  .live { justify-content: center; align-items: center; text-align: center; }
+  .live .prompt { font-family: var(--mono); font-size: 26px; background: var(--panel); border: 1px solid #6b3a27; border-radius: 12px; padding: 20px 30px; }
   #notes { position: fixed; left: 0; right: 0; bottom: 0; max-height: 38vh; overflow: auto; background: rgba(8,12,18,.97);
            border-top: 2px solid var(--accent); padding: 18px 28px; font-size: 18px; line-height: 1.55; display: none; z-index: 10; }
   #notes.show { display: block; }
@@ -61,76 +75,148 @@
 
 <!-- 1. TITLE -->
 <section class="slide" data-title="Title">
+  <img class="bg-shot" src="docs/demo/screenshots/01-traces-list.png" alt="">
   <div class="grow"></div>
   <div class="kicker">Live demo · Databricks MLflow 3 GenAI</div>
   <h1>GenAI tracing you can<br>actually prove</h1>
-  <p class="muted" style="font-size:30px;max-width:1150px">Seven experiments: one trace, ten spans, three turns, three failure signatures — and an evaluation run over stored traces. No external LLM key.</p>
+  <p class="muted" style="font-size:28px;max-width:1150px">Seven experiments behind a single loop: trace → inspect → measure → evaluate → document. Real traces, real screenshots, no external LLM key.</p>
   <div class="grow"></div>
-  <div class="row" style="gap:14px">
-    <span class="tag">Databricks FM endpoint</span><span class="tag">LangChain autolog</span>
-    <span class="tag">Manual spans</span><span class="tag">Sessions</span><span class="tag">GenAI evaluation</span>
+  <div class="row" style="gap:12px">
+    <span class="tag">Databricks FM</span><span class="tag">Autolog + manual spans</span>
+    <span class="tag">Sessions</span><span class="tag">Failure signatures</span><span class="tag">GenAI evaluation</span>
   </div>
-  <aside class="notes">Keep this to one breath. If you want a cold open, advance straight to slide 2 and run the script live.</aside>
+  <aside class="notes">Keep this to one breath. The background is the real traces list. If you want a cold open, advance to slide 2 and run the script live.</aside>
 </section>
 
-<!-- 2. LIVE CUE -->
-<section class="slide live" data-title="Act 1 — Live trace">
-  <div class="badge">LIVE · ACT 1</div>
-  <h2>"I'll show you the whole execution — model, tool, timing — with no API key."</h2>
-  <div class="prompt">.venv/bin/python trace_example.py</div>
-  <div class="where">Terminal → paste the printed trace ID into Tab 1 · Databricks Traces</div>
-  <aside class="notes">Point at ChatDatabricks (CHAT_MODEL) and get_weather (TOOL). Auth is only ~/.databrickscfg. Land it: "That's the baseline."</aside>
+<!-- 2. ACT 1: REAL APP + LIVE CUE -->
+<section class="slide" data-title="Act 1 — Live trace">
+  <div class="kicker">Act 1 · Cold open</div>
+  <h2>34 real traces in one Databricks experiment</h2>
+  <div class="frame wide">
+    <img src="docs/demo/screenshots/01-traces-list.png" alt="MLflow Traces list showing real agent traces">
+    <span class="badge">MLFLOW UI · TRACES TAB</span>
+    <div class="cap">/Shared/my-first-trace · inputs, outputs, state, duration, tokens, session and tags — all queryable.</div>
+  </div>
+  <div class="row" style="margin-top:14px;align-items:center">
+    <div class="live prompt" style="flex:0 0 auto">.venv/bin/python trace_example.py</div>
+    <p class="small muted" style="margin:0">Then paste the printed trace ID into the search box. Auth is only <code>~/.databrickscfg</code>.</p>
+  </div>
+  <aside class="notes">Point at the columns: Time, Input, Output, Session, Duration, State, Tokens, Tags. Run the script live and paste the new ID. Land it: "That's the baseline."</aside>
 </section>
 
-<!-- 3. SPAN ANATOMY -->
-<section class="slide" data-title="What you just saw">
+<!-- 3. ACT 2: SPAN ANATOMY -->
+<section class="slide" data-title="Act 2 — Span anatomy">
   <div class="kicker">Act 2 · What you just saw</div>
   <h2>Autolog sees the framework. Manual spans see your code.</h2>
-  <div class="row">
-    <div class="col card"><div class="big muted">7</div><div class="label">spans · baseline</div><p>ChatDatabricks + get_weather, captured automatically.</p></div>
-    <div class="col card"><div class="big">10</div><div class="label">spans · manual + autolog</div><p>App boundary + pre/post-processing nest with the same autolog spans.</p></div>
-  </div>
-  <div class="grow"></div>
-  <div class="callout">One trace, not three. The manual spans parent the autolog spans — timing, I/O and tags stay queryable together.</div>
-  <aside class="notes">If asked about stdout: no timing, no parent/child, no link to the model call. Traces have all three.</aside>
-</section>
-
-<!-- 4. SESSIONS + FAILURES -->
-<section class="slide" data-title="Sessions & failures">
-  <div class="kicker">Acts 3–4 · Conversations and failures</div>
-  <h2>Group turns. Distinguish failures.</h2>
-  <div class="row">
-    <div class="col card">
-      <h3 style="color:var(--accent)">Multi-turn</h3>
-      <p>3 turns → 3 traces, one <code>session_id</code>. Turn 3 recalls "San Francisco" from history, with no tool call.</p>
-      <p class="muted">Group turns instead of merging them: each turn keeps clean inputs and outputs.</p>
+  <div class="row" style="justify-content:center">
+    <div class="col">
+      <div class="frame half">
+        <img src="docs/demo/screenshots/02-baseline-waterfall.png" alt="Baseline trace waterfall with seven spans">
+        <span class="badge">7 SPANS · 3.12s</span>
+        <div class="cap">Baseline: ChatDatabricks + get_weather, captured automatically.</div>
+      </div>
+      <p class="small muted" style="text-align:center;margin:8px 0 0">trace <code>tr-054cbbc9…</code></p>
     </div>
-    <div class="col card">
-      <h3 style="color:var(--accent)">Failures</h3>
-      <p><span class="bad">Unhandled</span> → trace <code>ERROR</code> + exception events.</p>
-      <p><span class="good">Handled</span> → child span <code>ERROR</code> only, trace stays <code>OK</code>.</p>
-      <p class="muted">Filter with <code>status = 'ERROR'</code> — not <code>state</code>.</p>
+    <div class="col">
+      <div class="frame half">
+        <img src="docs/demo/screenshots/03-manual-spans.png" alt="Manual span trace waterfall with ten spans">
+        <span class="badge">10 SPANS · 2.69s</span>
+        <div class="cap">App boundary + pre/post-processing nest with the same autolog spans.</div>
+      </div>
+      <p class="small muted" style="text-align:center;margin:8px 0 0">trace <code>tr-0cb5f6d2…</code></p>
     </div>
   </div>
-  <div class="grow"></div>
-  <div class="callout">The failing tool had to look legitimate: one labelled "deliberately broken" made the model refuse the call, so no error span appeared.</div>
-  <aside class="notes">Search the Traces tab by session ID, then by status. Keep the distinction explicit: a pager should fire on the unhandled case, not the handled one.</aside>
+  <div class="callout" style="margin-top:14px">One trace, not three. Manual spans parent the autolog spans — timing, I/O and tags stay queryable together.</div>
+  <aside class="notes">If asked about stdout: no timing, no parent/child, no link to the model call. Traces have all three. The second screenshot is a different run of the same toy agent.</aside>
 </section>
 
-<!-- 5. PROOF -->
-<section class="slide" data-title="Proof">
+<!-- 4. ACT 3: MULTI-TURN -->
+<section class="slide" data-title="Act 3 — Multi-turn">
+  <div class="kicker">Act 3 · Conversations</div>
+  <h2>Three turns. Three traces. One session.</h2>
+  <div class="row">
+    <div class="col" style="flex:0 0 1040px">
+      <div class="frame medium" style="width:1040px;height:506px">
+        <img src="docs/demo/screenshots/04-multiturn-turn3.png" alt="Turn 3 trace recalling the first city from history">
+        <span class="badge">TURN 3 · 0.39s · 4 SPANS</span>
+        <div class="cap">"Which city did I ask about first?" → "You asked about San Francisco first." — no tool call.</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h3>What the screenshot shows</h3>
+        <p>Session <code>lab-f005-1795028845</code> groups all three turns in the Session column.</p>
+        <p>Turn 2 switches city. Turn 3 recalls turn 1 from <code>history_messages_before: 4</code>.</p>
+        <p class="muted">Trace ID comes from <code>span.trace_id</code>, not <code>get_last_active_trace_id()</code>.</p>
+      </div>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:14px">Group turns under a session rather than merging them — each turn keeps its own inputs, outputs and timing.</div>
+  <aside class="notes">Search the Traces tab by the session ID to see all three turns. The 4 spans on turn 3 prove recall came from history, not a tool call.</aside>
+</section>
+
+<!-- 5. ACT 4: FAILURE SIGNATURES -->
+<section class="slide" data-title="Act 4 — Failures">
+  <div class="kicker">Acts 4 · Failure signatures</div>
+  <h2>Same app. Three different failure shapes.</h2>
+  <div class="row">
+    <div class="col">
+      <div class="frame third">
+        <img src="docs/demo/screenshots/05-tool-error.png" alt="Tool error trace marked ERROR with exception stacktrace">
+        <span class="badge">TRACE · ERROR</span>
+        <div class="cap">Tool raises → trace ERROR + exception.type + stacktrace.</div>
+      </div>
+      <p class="small muted" style="text-align:center;margin:8px 0 0"><code>tr-cbd09f84…</code></p>
+    </div>
+    <div class="col">
+      <div class="frame third">
+        <img src="docs/demo/screenshots/06-unhandled-error.png" alt="Unhandled exception trace marked ERROR">
+        <span class="badge">TRACE · ERROR</span>
+        <div class="cap">Unhandled exception → trace ERROR, one span, exception events.</div>
+      </div>
+      <p class="small muted" style="text-align:center;margin:8px 0 0"><code>tr-3dbea41e…</code></p>
+    </div>
+    <div class="col">
+      <div class="frame third">
+        <img src="docs/demo/screenshots/07-handled-error.png" alt="Handled error with child span ERROR and trace OK">
+        <span class="badge">TRACE · OK</span>
+        <div class="cap">Handled error → child span ERROR only; trace stays OK.</div>
+      </div>
+      <p class="small muted" style="text-align:center;margin:8px 0 0"><code>tr-193c937a…</code></p>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:14px">Filter with <code>status = 'ERROR'</code> — not <code>state</code>. A pager should fire on the first two, not the third.</div>
+  <aside class="notes">The failing tool had to look legitimate: one labelled "deliberately broken" made the model refuse the call, so no error span appeared. Open the Attributes tab on either error trace to show the stacktrace.</aside>
+</section>
+
+<!-- 6. ACT 5: PROOF -->
+<section class="slide" data-title="Act 5 — Proof">
   <div class="kicker">Act 5 · Prove it</div>
   <h2>Measure and score what already happened</h2>
   <div class="row">
-    <div class="col card"><div class="big">4.3 s</div><div class="label">slowest of 17 traces</div><p>~100% model time (2,742 + 1,530 ms); graph/tool overhead ~4 ms.</p></div>
-    <div class="col card"><div class="big">11 × 3</div><div class="label">records × scorers</div><p>Managed Databricks judge + 2 deterministic checks; 0 unscored, 0 errored.</p></div>
+    <div class="col" style="flex:0 0 900px">
+      <div class="frame medium">
+        <img src="docs/demo/screenshots/08-error-rows.png" alt="Traces list scrolled to error and session rows">
+        <span class="badge">SEGMENT BEFORE YOU AGGREGATE</span>
+        <div class="cap">Error rows legitimately show no tokens; multi-turn rows grow with context.</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" style="margin-bottom:14px">
+        <div class="big">4.3 s</div><div class="label">slowest of 17 traces</div>
+        <p class="small">~100% model time (2,742 + 1,530 ms); graph/tool overhead ~4 ms.</p>
+      </div>
+      <div class="card">
+        <div class="big">11 × 3</div><div class="label">records × scorers</div>
+        <p class="small">Managed Databricks judge + 2 deterministic checks; 0 unscored, 0 errored.</p>
+      </div>
+    </div>
   </div>
-  <div class="grow"></div>
-  <div class="callout">A pilot caught two real scorer bugs (U+202F in "San Francisco", <code>sf.</code> tokenization). Known-bad tests still return <code>False</code> — the 1.0 means are a known-good sample, not dead scorers.</div>
-  <aside class="notes">Segment by scenario/status: answerless error traces have null usage and drag mixed aggregates. Mention the registered scorers — this is a harness, not a one-off.</aside>
+  <div class="callout" style="margin-top:14px">A pilot caught two real scorer bugs (U+202F in "San Francisco", <code>sf.</code> tokenization). Known-bad tests still return <code>False</code> — the 1.0 means are a known-good sample, not dead scorers.</div>
+  <aside class="notes">Latency, tokens and cost are first-class TraceInfo fields. Answerless error traces have null usage and drag mixed aggregates. The three scorers are registered in the experiment — this is a harness, not a one-off. This is the slide for Act 5B.</aside>
 </section>
 
-<!-- 6. CLOSE -->
+<!-- 7. CLOSE -->
 <section class="slide" data-title="Close">
   <div class="kicker">Close · Honest limit</div>
   <h2>The pipeline is the achievement.<br>The limits are the next experiment.</h2>
