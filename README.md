@@ -1,0 +1,42 @@
+# MLflow GenAI Tracing (Databricks) quickstart
+
+Minimal local setup to produce a traced LangGraph agent run and send traces to a Databricks workspace, following the [Databricks tracing overview](https://docs.databricks.com/aws/en/mlflow3/genai/tracing/overview).
+
+The example agent uses a Databricks Foundation Model API endpoint (`databricks-gpt-oss-20b` by default), so no external LLM key is needed — only Databricks workspace auth.
+
+## Setup
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# edit .env with your Databricks host/token and OPENAI_API_KEY
+```
+
+## Run
+
+```bash
+source .venv/bin/activate
+python trace_example.py
+```
+
+Then in Databricks: **Experiments** → open the experiment (default `/Shared/my-first-trace`) → **Traces** tab.
+
+## Lab book
+
+- [docs/LAB_BOOK.md](docs/LAB_BOOK.md) — experiment log, environment snapshot, ideas/backlog for future experiments
+- [docs/experiments/](docs/experiments/) — per-experiment writeups and template ([001-first-trace.md](docs/experiments/001-first-trace.md), [002-foundation-model.md](docs/experiments/002-foundation-model.md), [003-manual-spans.md](docs/experiments/003-manual-spans.md), [004-multi-turn-tracing.md](docs/experiments/004-multi-turn-tracing.md))
+
+### Optional experiments
+```bash
+python trace_manual_spans.py   # @mlflow.trace boundary + pre/post-processing spans
+python trace_multi_turn.py     # 3-turn conversation grouped by a shared session_id
+```
+
+## Notes
+
+- **Databricks auth:** set `DATABRICKS_HOST` + `DATABRICKS_TOKEN` in `.env`, or configure a profile in `~/.databrickscfg` (used here).
+- **LLM:** the sample uses `ChatDatabricks` against a Foundation Model endpoint (`databricks-gpt-oss-20b` by default). Change it via `DATABRICKS_MODEL_ENDPOINT` in `.env`. No external LLM key needed.
+- `mlflow.set_tracking_uri("databricks")` sends traces to your Databricks workspace (not a local MLflow server).
+- **Dependency note (Python 3.15):** `databricks-langchain` and its Databricks/Unity Catalog transitive deps were installed with `pip install --no-deps ...` because full resolution attempts to build an old scipy that needs a Fortran compiler. If you rebuild the venv, install `mlflow[databricks] langgraph langchain langchain-openai python-dotenv` normally, then add the Databricks integration packages with `--no-deps` (see experiment 002 for the list).

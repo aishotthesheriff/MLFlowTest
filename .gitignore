@@ -1,0 +1,15 @@
+# Secrets and local config
+.env
+
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# GitNexus index (generated)
+.gitnexus/
+
+# OS files
+.DS_Store
