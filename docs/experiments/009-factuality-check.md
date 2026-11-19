@@ -63,7 +63,7 @@
 - **The gap was real.** The managed relevance judge did not flag "San Francisco is sunny and 75F" — it is on topic, just wrong. City and length checks cannot see the error either. A semantic judge asks "is this relevant?", not "is this true?".
 - **Reference-based checks close it cheaply.** Because the lab tool is a stub, the ground truth is known exactly, so a deterministic whole-word check is enough. No extra judge call, no key.
 - **Skip semantics matter.** Returning `None` from the scorer is treated by MLflow as an empty assessment, so the recall turn is skipped instead of counted as a failure. The report prints `skipped=1` to keep that visible.
-- **Residual blind spot:** an answer that states the expected fact *and* contradicts it — "cloudy, but also 95F and sunny" — still passes the deterministic check. Catching contradictions needs an LLM correctness judge (MLflow's `Correctness` with `expected_facts`) or human labels.
+- **Residual blind spot:** an answer that states the expected fact *and* contradicts it — "cloudy, but also 95F and sunny" — still passes the deterministic check. Catching contradictions needs a different check; [exp 010](010-self-consistency-judge.md) adds a scoped LLM rubric judge for exactly that case, with a sixth control.
 - **Comparison to exp 008:** 4/4 → 5/5 controls, and the fifth is the first control the original suite provably could not catch.
 
 ## 6. Learnings & decisions
@@ -73,7 +73,8 @@
 - Keep skip semantics explicit (`None` + `skipped` count) so "not applicable" never reads as "failed" or "unscored".
 
 ## 7. Next actions
-- [ ] Add an LLM `Correctness` check with `expected_facts` for paraphrase and contradiction robustness, and compare it against the deterministic check.
+- [x] Add a self-contradiction check for answers that state the right fact and contradict it. → completed in [experiment 010](010-self-consistency-judge.md) with a scoped `Guidelines` rubric judge.
+- [ ] Add an LLM `Correctness` check with `expected_facts` for paraphrase robustness, and compare it against the deterministic check.
 - [ ] Move all five controls into the full run as a standing regression set (F-014).
 - [ ] Use the suite for prompt/model A/B comparisons (F-014).
 

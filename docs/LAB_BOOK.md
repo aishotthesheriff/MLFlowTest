@@ -70,6 +70,7 @@ View traces: Databricks **Experiments** → experiment (default `/Shared/my-firs
 | 007 | 2026-11-18 | GenAI evaluation on existing traces (F-009) | Completed | `/Shared/my-first-trace` | `evaluate_traces.py`, precomputed mode, 3 scorers (LLM judge + 2 deterministic) | Success: eval run `345d6069efe64933a8d04e350a264381`, 11 records × 3 scorers, all means 1.0, 0 unscored/errored | [007-genai-evaluation.md](experiments/007-genai-evaluation.md) |
 | 008 | 2026-11-19 | Known-bad scorer controls | Completed | `/Shared/my-first-trace` | `evaluate_traces.py --pilot --with-controls`, 3 clean + 4 planted controls, city alias map | Success: run `a4809bf5e16a42fcaca5ed77f2d38120`; clean 3/3, controls 4/4 caught, means 0.57/0.57/0.86 | [008-scorer-controls.md](experiments/008-scorer-controls.md) |
 | 009 | 2026-11-19 | Right city, wrong fact: factuality check | Completed | `/Shared/my-first-trace` | `evaluate_traces.py --pilot --with-controls`, 3 clean + 5 planted controls, `answers_expected_fact` ground-truth check | Success: run `d4e336016b264b8c84720015f550dd3a`; clean 3/3, controls 5/5 caught, right-city-wrong-fact caught only by the fact check | [009-factuality-check.md](experiments/009-factuality-check.md) |
+| 010 | 2026-11-19 | Self-contradiction rubric judge (no expected facts) | Completed | `/Shared/my-first-trace` | `evaluate_traces.py --pilot --with-controls`, 3 clean + 6 planted controls, `Guidelines` self-consistency judge | Success: pilot `30eabe1d8fdf4540a8ef9c8ee5dae368`, controls 6/6 caught, self-contradiction caught only by the judge; full run `99060446d0004248a3f0acab278408d6` all 1.0 | [010-self-consistency-judge.md](experiments/010-self-consistency-judge.md) |
 
 **Status legend:** Planned · In progress · Completed · Blocked · Abandoned
 
@@ -91,6 +92,7 @@ Individual writeups live in [`docs/experiments/`](experiments/):
 - [007-genai-evaluation.md](experiments/007-genai-evaluation.md) — precomputed evaluation, registered scorers, row-level assessments
 - [008-scorer-controls.md](experiments/008-scorer-controls.md) — planted known-bad controls, city alias fix, clean-vs-controls reporting
 - [009-factuality-check.md](experiments/009-factuality-check.md) — right-city-wrong-fact control, reference-based fact check, skip semantics
+- [010-self-consistency-judge.md](experiments/010-self-consistency-judge.md) — scoped `Guidelines` rubric judge, self-contradiction control, no expected facts
 
 ---
 
@@ -120,7 +122,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | F-011 | Unity Catalog trace storage | UC-backed trace storage improves governance/queryability for this workflow. | Medium | M | UC permissions/config | Proposed | Follow [trace-unity-catalog](https://docs.databricks.com/aws/en/mlflow3/genai/tracing/trace-unity-catalog); compare limits/capabilities. |
 | F-012 | Experiment organization strategy | Separate dev/test/prod experiments and naming conventions reduce clutter and risk. | Medium | S | Team/workspace conventions | Proposed | Propose path scheme, tags, and retention expectations. |
 | F-013 | Production-style monitoring/alerting workflow | Traces can feed dashboards/alerts for ongoing quality and performance monitoring. | Medium | L | Production-like workload | Proposed | Identify key signals and Databricks/Lakehouse integration path. |
-| F-014 | Prompt/version comparison (A/B) | Side-by-side traced runs make prompt/model changes measurable. | Medium | M | Variant configs | Proposed | Five known-bad controls now available via `--with-controls` (exps 008–009), including right-city-wrong-fact. Hold inputs constant; compare outputs, traces, and eval scores. Reuse `evaluate_traces.py` suite. |
+| F-014 | Prompt/version comparison (A/B) | Side-by-side traced runs make prompt/model changes measurable. | Medium | M | Variant configs | Proposed | Six known-bad controls now available via `--with-controls` (exps 008–010), including right-city-wrong-fact and self-contradiction. Hold inputs constant; compare outputs, traces, and eval scores. Reuse `evaluate_traces.py` suite. |
 
 > Add new ideas freely; include a short hypothesis and dependency so they are actionable.
 
@@ -149,6 +151,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-18 | Normalize Unicode whitespace and use word boundaries in deterministic text scorers | Model output uses U+202F in "San Francisco" and "sf." at sentence end, causing false negatives | Fixed in exp 007 pilot; `expectations` also pollute `result.passed`, so count real scorer verdicts |
 | 2026-11-19 | Add planted known-bad controls and a city-alias map to the evaluation harness | Uniform 1.0 is not evidence; "New York City" for expected "NYC" was a real false negative | Verified in exp 008 (`a4809bf5e16a42fcaca5ed77f2d38120`): clean 3/3, controls 4/4 caught, non-uniform means |
 | 2026-11-19 | Add a reference-based factuality check; relevance is not truth | A right-city-wrong-fact answer passed city, relevance, and length; only ground truth catches it | Verified in exp 009 (`d4e336016b264b8c84720015f550dd3a`): 5/5 controls caught, right-city-wrong-fact flagged by `answers_expected_fact` alone |
+| 2026-11-19 | Add a scoped self-consistency rubric judge for answers that state the right fact and contradict it | No expected facts are needed when the defect is internal; the deterministic check cannot see it | Verified in exp 010 (`30eabe1d8fdf4540a8ef9c8ee5dae368`): 6/6 controls caught, self-contradiction flagged by `self_consistent` alone |
 
 ## 9. Change log
 
@@ -164,6 +167,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-18 | Added `evaluate_traces.py` and experiment 007 | F-009 completed; 3 registered scorers, 11 records scored, pilot bugs fixed and documented |
 | 2026-11-19 | Added `--with-controls` and experiment 008; fixed NYC/SF city aliases | Known-bad controls caught 4/4; clean sample 3/3; demo Act 5B now proves discrimination |
 | 2026-11-19 | Added `answers_expected_fact` and experiment 009 | Right-city-wrong-fact control caught only by the fact check; 5/5 controls caught; scorer suite is now 4 registered scorers |
+| 2026-11-19 | Added `self_consistent` `Guidelines` judge and experiment 010 | Self-contradiction control caught only by the rubric judge; 6/6 controls caught; suite is now 5 registered scorers |
 
 ---
 *Keep entries factual, link to traces/evidence, and prefer small reproducible experiments over large undocumented changes.*

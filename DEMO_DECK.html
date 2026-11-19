@@ -207,13 +207,13 @@
         <p class="small">~100% model time (2,742 + 1,530 ms); graph/tool overhead ~4 ms.</p>
       </div>
       <div class="card">
-        <div class="big">3 + 5</div><div class="label">clean records + planted controls</div>
-        <p class="small">3/3 clean pass every scorer; 5/5 controls caught; full run: 16 × 4, 0 failed, 3 skipped.</p>
+        <div class="big">3 + 6</div><div class="label">clean records + planted controls</div>
+        <p class="small">3/3 clean pass every scorer; 6/6 controls caught; full run: 16 × 5, 0 failed, 3 skipped.</p>
       </div>
     </div>
   </div>
-  <div class="callout" style="margin-top:14px">A live run scored "New York City" as <code>False</code> for expected "NYC" — fixed with an alias map. Five planted controls are caught <b>5/5</b>. The last one — <i>right city, wrong fact</i> — passes city, relevance, and length, and is caught <b>only</b> by the ground-truth fact check.</div>
-  <aside class="notes">Latency, tokens and cost are first-class TraceInfo fields. Answerless error traces have null usage and drag mixed aggregates. The four scorers are registered in the experiment — this is a harness, not a one-off. Run <code>evaluate_traces.py --pilot --with-controls</code> for this slide: the clean rows stay green, every planted control is flagged, and the report calls out the control the old three-scorer suite would have passed.</aside>
+  <div class="callout" style="margin-top:14px">A live run scored "New York City" as <code>False</code> for expected "NYC" — fixed with an alias map. Six planted controls are caught <b>6/6</b>, and two are caught by exactly one scorer: <i>right city, wrong fact</i> by the ground-truth fact check, and <i>right fact, self-contradictory</i> ("cloudy, but sunny and 95F") by a scoped rubric judge that needs no expected facts.</div>
+  <aside class="notes">Latency, tokens and cost are first-class TraceInfo fields. Answerless error traces have null usage and drag mixed aggregates. The five scorers are registered in the experiment — this is a harness, not a one-off. Run <code>evaluate_traces.py --pilot --with-controls</code> for this slide: the clean rows stay green, every planted control is flagged, and the report names the control each single-scorer check caught.</aside>
 </section>
 
 <!-- 7. CLOSE -->
@@ -222,11 +222,11 @@
   <h2>The pipeline is the achievement.<br>The limits are the next experiment.</h2>
   <ul class="muted">
     <li>Repeatable loop: trace → inspect → measure → evaluate → document.</li>
-    <li>11 short weather answers from one toy agent — plus 5 planted controls — prove the pipeline works, not production quality.</li>
-    <li>Next: full-run controls + contradiction checks + A/B comparisons (F-014), tag conventions (F-010), monitoring (F-013).</li>
+    <li>11 short weather answers from one toy agent — plus 6 planted controls — prove the pipeline works, not production quality.</li>
+    <li>Next: full-run controls + a correctness judge with expected facts + A/B comparisons (F-014), tag conventions (F-010), monitoring (F-013).</li>
   </ul>
   <div class="grow"></div>
-  <div class="callout">Writeups: <code>docs/LAB_BOOK.md</code> · <code>docs/experiments/001–009</code> · <code>docs/FINDINGS_AND_LEARNINGS.md</code></div>
+  <div class="callout">Writeups: <code>docs/LAB_BOOK.md</code> · <code>docs/experiments/001–010</code> · <code>docs/FINDINGS_AND_LEARNINGS.md</code></div>
   <aside class="notes">Leave the Traces tab open for Q&amp;A and open questions about trace IDs, scorer design, and cost.</aside>
 </section>
 

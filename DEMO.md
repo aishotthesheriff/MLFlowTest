@@ -11,7 +11,7 @@ About **7 minutes** (~9 with the optional bug-hunt beat). Everything runs from t
 | 3 | Multi-turn: three traces, one session, cross-turn recall | ~1.5 min |
 | 4 | Failure signatures: trace `ERROR` vs span `ERROR` | ~1 min |
 | 5 | Proof: latency/cost + an evaluation run over stored traces | ~2 min |
-| 5B (opt.) | The control the old suite missed: right city, wrong fact | ~2 min |
+| 5B (opt.) | The controls the old suite missed: wrong fact and self-contradiction | ~2.5 min |
 
 ## 1. Set up (before the demo)
 
@@ -45,4 +45,4 @@ Open **Tab 1** at `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments
 
 See the troubleshooting card at the end of `DEMO_SCRIPT.md`. Most issues are auth (`~/.databrickscfg`), the wrong experiment, or a stale trace ID — the preflight catches all three before you start.
 
-**Honest limit to say out loud:** the clean evaluation scores are 1.0 across 11 short weather answers from one toy agent; the pilot's five planted controls are caught 5/5 — including a right-city-wrong-fact hallucination that the original three-scorer suite passed — which proves the harness discriminates but not that an agent is production-ready. The lab writeups say the same.
+**Honest limit to say out loud:** the clean evaluation scores are 1.0 across 11 short weather answers from one toy agent; the pilot's six planted controls are caught 6/6 — including a right-city-wrong-fact hallucination and a self-contradictory answer that the original three-scorer suite passed — which proves the harness discriminates but not that an agent is production-ready. The lab writeups say the same.

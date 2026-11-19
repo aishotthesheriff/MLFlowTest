@@ -9,6 +9,7 @@ and scored with:
   - relevance_to_query  built-in LLM judge (Databricks managed judge on this workspace)
   - answers_expected_city  deterministic custom @scorer (user outcome)
   - answers_expected_fact  deterministic custom @scorer (ground-truth fact stated)
+  - self_consistent  LLM guideline judge (the answer does not contradict itself)
   - response_length  deterministic built-in guardrail (< 300 chars)
 
 Usage:
@@ -28,15 +29,28 @@ import sys
 from dotenv import load_dotenv
 
 from mlflow.entities import Feedback
-from mlflow.genai.scorers import RelevanceToQuery, ResponseLength, scorer
+from mlflow.genai.scorers import Guidelines, RelevanceToQuery, ResponseLength, scorer
 
 EXCLUDED_SCENARIOS = {"error_tracing"}  # no usable final answer; evaluated separately in exp 005
 SCORER_NAMES = (
     "answers_expected_city",
     "answers_expected_fact",
     "relevance_to_query",
+    "self_consistent",
     "response_length",
 )
+
+# Rubric judge: no expected facts are maintained. It only asks whether the answer
+# agrees with itself, so it also works when ground truth is unknown.
+SELF_CONSISTENCY_GUIDELINES = [
+    "SELF-CONSISTENCY CHECK ONLY. Judge whether the answer contradicts itself. "
+    "Ignore relevance, correctness against outside facts, completeness, and tone.",
+    "The answer must not contradict itself.",
+    "If the answer states a sky condition or a temperature, every such statement must "
+    "agree. An answer that says it is cloudy and also sunny, clear, or 95F is "
+    "self-contradictory.",
+    "If the answer makes no claim about weather conditions or temperature, pass it.",
+]
 
 # Abbreviations the agent expands in its answers ("NYC" -> "New York City").
 CITY_ALIASES = {
@@ -112,6 +126,11 @@ def build_scorers():
         RelevanceToQuery(),
         answers_expected_city,
         answers_expected_fact,
+        Guidelines(
+            name="self_consistent",
+            guidelines=SELF_CONSISTENCY_GUIDELINES,
+            model="databricks",
+        ),
         ResponseLength(max_length=300, unit="chars"),
     ]
 
@@ -189,6 +208,9 @@ def build_controls():
         # Right city, plausible tone, no hallucinated city or length problem:
         # only the ground-truth fact check can catch this one.
         ("right_city_wrong_fact", "The weather in San Francisco is sunny and 75F with clear skies."),
+        # States the expected fact AND contradicts it. The deterministic fact check
+        # sees "cloudy" and passes; only the self-consistency judge can catch it.
+        ("self_contradiction", "It might be cloudy in San Francisco, but it's also sunny, 95F, and clear."),
     ]
     records, metas = [], []
     for name, answer in controls:
@@ -299,7 +321,7 @@ def report(result, metas, indices, label):
 
         print("\n  Known-bad controls (each should be caught by >=1 scorer):")
         caught_total = 0
-        fact_only = []
+        only_by = {}
         for row_i in control_rows:
             meta = metas[indices[row_i]]
             verdicts, caught, caught_by = [], False, []
@@ -310,13 +332,14 @@ def report(result, metas, indices, label):
                     caught = True
                     caught_by.append(name)
             caught_total += int(caught)
-            if caught_by == ["answers_expected_fact"]:
-                fact_only.append(meta["control"])
+            if len(caught_by) == 1:
+                only_by.setdefault(caught_by[0], []).append(meta["control"])
             print(f"    {meta['trace_id']:<32} caught={caught} | " + " ".join(verdicts))
         print(f"    controls caught: {caught_total}/{len(control_rows)}")
-        if fact_only:
-            print("    caught only by answers_expected_fact (the old 3-scorer suite "
-                  f"would have passed): {', '.join(fact_only)}")
+        if only_by:
+            print("    caught by a single scorer (a narrower suite would have passed):")
+            for name, controls in only_by.items():
+                print(f"      {name}: {', '.join(controls)}")
 
 
 def main() -> int:

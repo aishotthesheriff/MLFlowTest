@@ -1,6 +1,6 @@
 # Fixes, Findings & Learnings
 
-A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It collects the bugs we hit, the fixes that worked, the platform behaviors we confirmed, and the patterns we adopted across experiments 001-009. Source writeups live in [`docs/experiments/`](experiments/); the run log lives in [`docs/LAB_BOOK.md`](LAB_BOOK.md).
+A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It collects the bugs we hit, the fixes that worked, the platform behaviors we confirmed, and the patterns we adopted across experiments 001-010. Source writeups live in [`docs/experiments/`](experiments/); the run log lives in [`docs/LAB_BOOK.md`](LAB_BOOK.md).
 
 **Last updated:** 2026-11-19 · **Workspace:** `/Users/yourbabes/dev/Databricks/MLFlowTest` · **Experiment:** `/Shared/my-first-trace` (`1675992194464286`)
 
@@ -24,6 +24,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 | Correct answer "New York City" scored `False` for expected "NYC" | Model expands the abbreviation; literal token match misses it | Alias map (`nyc` → "new york city") with whole-word matching | [008](experiments/008-scorer-controls.md) |
 | `result.passed` was `False` despite every scorer passing | `expectations` become `<key>/value` columns; `result.passed` inspects all of them | Count verdicts from real scorer columns only; report errors/unscored separately | [007](experiments/007-genai-evaluation.md) |
 | Right-city, wrong-fact answer passed every scorer | City, relevance, and length checks never compare the answer to ground truth | Add `answers_expected_fact` against the tool-derived fact; plant a control that only it catches | [009](experiments/009-factuality-check.md) |
+| Answer states the right fact and contradicts itself ("cloudy, but sunny and 95F") | A deterministic fact check matches tokens, not internal agreement | Add a scoped `Guidelines` self-consistency judge; plant a control that only it catches | [010](experiments/010-self-consistency-judge.md) |
 | Baseline root outputs were a string in some traces | Root span output shape varies by run/version | Guard with `isinstance(root.outputs, dict)` before `.get("messages")` | [007](experiments/007-genai-evaluation.md) |
 
 ---
@@ -47,6 +48,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 - **Ground-truth columns pollute `result.passed`.** `expectations` are surfaced as `expected_city/value`, which MLflow's `passed` property treats as a scorer verdict and rejects as non-boolean. The script now counts only the real scorers and reports skipped/unscored/errored explicitly. (exp 007)
 - **Relevance is not factuality.** A right-city-wrong-fact answer ("San Francisco is sunny and 75F") passed the city check, the relevance judge, and the length check. Added a reference-based `answers_expected_fact` check against the tool's ground truth, and a fifth control that only that check catches. (exp 009)
 - **Case-sensitive helper trap.** `city_mentioned()` assumed the caller had already lowercased and normalized the text, so a direct call on mixed-case text returned `False`. Moved normalization inside `_normalize()` so both matchers are case- and U+202F-insensitive by construction. (exp 009)
+- **An unscoped rubric judge drifts into relevance.** The first `self_consistent` rubric caught the intended contradiction but also flagged the off-topic control. Adding "ignore relevance, correctness, completeness, and tone" plus "pass answers with no weather claim" made it fire only on the contradiction. (exp 010)
 - **Defensive output parsing.** Baseline root spans sometimes hold a string rather than a dict; added an `isinstance` guard. (exp 007)
 
 ---
@@ -76,6 +78,9 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 - **A relevance judge does not catch a wrong fact.** The managed judge marked "San Francisco is sunny and 75F" as relevant; city and length checks also passed it. With the ground-truth fact check added, five controls are caught 5/5 and that control is flagged by `answers_expected_fact` alone. (exp 009)
 - A fresh full run with the fact check scored 16 records × 4 scorers: 0 failures, 0 errored, 3 skipped (recall turns with no tool-derived fact), every mean 1.0. The deterministic fact check produced no false negatives on the real answers. (exp 009)
 - Returning `None` from a custom scorer is a supported empty assessment (skipped), not an error; the report distinguishes `skipped` from `unscored`. (exp 009)
+- **A scoped rubric judge catches self-contradiction with no expected facts.** `Guidelines(name="self_consistent", model="databricks")` flagged "cloudy, but also sunny, 95F, and clear" while passing the right-city-wrong-fact control, which is internally consistent. Six controls are caught 6/6; the contradiction is caught by that judge alone. (exp 010)
+- **The two checks are complementary by construction.** A wrong-but-consistent answer fails only the ground-truth fact check; a right-fact-but-contradictory answer fails only the consistency judge. Neither replaces the other. (exps 009–010)
+- Evaluation runs add their own traces to the experiment (untagged `root_span` records), so filter by scenario or trace name before counting agent runs. (exp 010)
 - Precomputed mode stores row-level results in the evaluation run, **not** on the original traces (their `assessments` list stays empty). Each evaluation run also adds new traces to the experiment. (exp 007)
 
 ---
@@ -95,6 +100,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 11. **Small samples limit claims:** all lab answers are short weather replies from one toy agent; 11/11 passes demonstrate the pipeline works, not that the agent is production-ready.
 12. **Plant known-bad controls:** a clean 1.0 means nothing without a demonstrated catch rate; add controls to the harness and report clean vs. control rows separately.
 13. **Relevance is not truth:** if the expected fact is known, check it directly; a relevance or fluency judge will happily pass a confident, on-topic hallucination.
+14. **Scope a rubric judge to one property:** a judge told to "check consistency" will judge relevance too unless you tell it what to ignore. Name the property, list what to ignore, and give it a pass rule for answers with nothing to check.
 
 ---
 
@@ -111,11 +117,12 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 | Evaluation scorers, pilot fixes, results | [007-genai-evaluation.md](experiments/007-genai-evaluation.md) |
 | Known-bad controls, alias fix | [008-scorer-controls.md](experiments/008-scorer-controls.md) |
 | Right-city-wrong-fact control, factuality check | [009-factuality-check.md](experiments/009-factuality-check.md) |
+| Self-contradiction rubric judge, no expected facts | [010-self-consistency-judge.md](experiments/010-self-consistency-judge.md) |
 | Register, backlog, decision log | [LAB_BOOK.md](LAB_BOOK.md) |
 
 ## 5. Still open
 
 - Harden the environment: pin dependency versions so the `--no-deps` recipe is reproducible (F-012).
-- Move the known-bad controls from the pilot into the full run and keep them as a standing regression set (F-014); add an LLM `Correctness` check with `expected_facts` for contradiction/paraphrase robustness (deterministic check landed in exp 009).
+- Move the known-bad controls from the pilot into the full run and keep them as a standing regression set (F-014); add an LLM `Correctness` check with `expected_facts` for paraphrase robustness and compare it against the deterministic check (deterministic check landed in exp 009, consistency judge in exp 010).
 - Standardize tags across every script (F-010), then use the suite for A/B comparisons (F-014) and monitoring (F-013).
 - Decide on Unity Catalog trace storage and shared vs project-specific experiment paths (F-011, open questions in the lab book).
