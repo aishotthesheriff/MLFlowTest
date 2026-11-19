@@ -123,21 +123,25 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | F-008 | Latency and token/cost analysis | Trace metadata is sufficient to identify slow/expensive spans. | Medium | S-M | Runs with usage data | Completed (exp 006) | `TraceInfo.execution_time_ms`/`token_usage`/`cost` suffice; 17 traces aggregated; slowest ~100% LLM-bound; null usage on no-LLM-call traces. |
 | F-009 | MLflow GenAI evaluation on traces | Automated scorers/judges can assess quality from traced runs. | High | M-L | Dataset/scorers setup | Completed (exp 007) | Precomputed mode over 11 traces; managed `databricks` judge + 2 deterministic scorers; all scored, no errors; uniform 1.0 reflecting known-good small sample. |
 | F-010 | Trace tagging, metadata, and searchability | Consistent tags (env, feature, git SHA, scenario) make traces easy to filter/debug. | Medium | S | — | Proposed | Set tags/metadata in code; document naming conventions. Exp 003 set `lab_book`/`scenario`/`model_endpoint` tags — reuse as convention. |
-| F-011 | Unity Catalog trace storage | UC-backed trace storage improves governance/queryability for this workflow. | Medium | M | UC permissions/config | Proposed | Follow [trace-unity-catalog](https://docs.databricks.com/aws/en/mlflow3/genai/tracing/trace-unity-catalog); compare limits/capabilities. |
-| F-012 | Experiment organization strategy | Separate dev/test/prod experiments and naming conventions reduce clutter and risk. | Medium | S | Team/workspace conventions | Proposed | Propose path scheme, tags, and retention expectations. |
+| F-011 | Unity Catalog trace storage | UC-backed trace storage improves governance/queryability for this workflow. | Medium | M | UC permissions/config | Deferred | Decided 2026-11-19: not needed for a ~120-trace demo; revisit when traces must be queryable from SQL/UC, or retention/limits bite. Follow [trace-unity-catalog](https://docs.databricks.com/aws/en/mlflow3/genai/tracing/trace-unity-catalog). |
+| F-012 | Experiment organization strategy | Separate dev/test/prod experiments and naming conventions reduce clutter and risk. | Medium | S | Team/workspace conventions | Proposed | Keep the shared demo path with `MLFLOW_EXPERIMENT_NAME` overrides; pin the known-working dependency versions on the next venv rebuild (recorded in README) and verify with a clean install. Propose path scheme, tags, and retention expectations. |
 | F-013 | Production-style monitoring/alerting workflow | Traces can feed dashboards/alerts for ongoing quality and performance monitoring. | Medium | L | Production-like workload | Proposed | Identify key signals and Databricks/Lakehouse integration path. |
 | F-014 | Prompt/version comparison (A/B) | Side-by-side traced runs make prompt/model changes measurable. | Medium | M | Variant configs | Proposed | Six known-bad output controls via `--with-controls` (exps 008–010), including right-city-wrong-fact and self-contradiction, plus five tool-call cases with three verdicts from exps 011–012. Hold inputs constant; compare outputs, traces, and eval scores. Reuse `evaluate_traces.py` and `evaluate_tool_calls.py`. |
 | F-015 | Tool-call tracing and validation | Tool selection, arguments, and call count can be observed in spans and judged from the same traces. | High | M | Scripted model + fake service | Completed (exps 011–012) | Exp 011 produced five verified traces and a manifest; exp 012 judged them with three scorer configurations over two repetitions (exact sequence `yes,no,no,no,no`, zero flips). Follow-up: a failure-plus-retry case where retries are legitimate, to confirm the efficiency judge does not punish recovery. |
 
 > Add new ideas freely; include a short hypothesis and dependency so they are actionable.
 
-## 7. Open questions
+## 7. Open questions → decisions (resolved 2026-11-19)
 
-- [x] Which Databricks Foundation Model serving endpoint should be the default for keyless/local-auth runs? → using `databricks-gpt-oss-20b` (exp 002); revisit if quality/latency favors another.
-- [ ] Should traces live in shared experiments (`/Shared/...`) or user/project-specific paths?
-- [ ] Do we need Unity Catalog-backed trace storage for this project now?
-- [ ] What evaluation criteria/scorers matter first (correctness, tool use, latency, cost, safety)? → started with relevance, expected-city outcome, length (exp 007).
-- [ ] Should we pin dependency versions for reproducibility once experiments stabilize?
+These were answered by what the lab actually did across experiments 001–012; the
+implementation work that remains lives in the backlog (F-010, F-011, F-012,
+F-014), not here.
+
+- [x] Which Databricks Foundation Model serving endpoint should be the default for keyless/local-auth runs? → `databricks-gpt-oss-20b` (exp 002); revisit if quality/latency favors another.
+- [x] Should traces live in shared experiments (`/Shared/...`) or user/project-specific paths? → **shared for the demo.** Every experiment script defaults to `/Shared/my-first-trace` with `MLFLOW_EXPERIMENT_NAME` as the override; all 12 experiments, the 8 evidence traces, and the demo preflight point there. Use the override for isolated runs; revisit only for multi-user work or a dev/test/prod split (F-012).
+- [x] Do we need Unity Catalog-backed trace storage for this project now? → **no.** Every run uses the default managed trace store on the Databricks tracking URI; ~120 traces accumulated with no storage or governance problem, so the UC hint is informational. Revisit when traces must be queryable from SQL/UC or retention/limits bite (F-011, deferred).
+- [x] What evaluation criteria/scorers matter first (correctness, tool use, latency, cost, safety)? → **correctness first** (expected city/fact plus tool-call correctness), then tool efficiency/behavior, then latency/cost (measured, not judged); safety is not covered yet. Relevance and length are supporting signals only: exp 009 showed a right-city-wrong-fact answer passes city, relevance and length; exp 012 showed efficiency can say `yes` where correctness says `no`. Eight scorers are registered — 5 output-level, 3 tool-call.
+- [x] Should we pin dependency versions for reproducibility once experiments stabilize? → **yes, on the next venv rebuild** (F-012). `requirements.txt` still uses `>=`/unbounded names while the working versions are recorded in the README dependency note. Pinning without a clean-install test would be unverifiable because `databricks-langchain` needs `--no-deps` on Python 3.15.
 
 ## 8. Learnings & decision log
 
@@ -159,6 +163,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-19 | Add a scoped self-consistency rubric judge for answers that state the right fact and contradict it | No expected facts are needed when the defect is internal; the deterministic check cannot see it | Verified in exp 010 (`30eabe1d8fdf4540a8ef9c8ee5dae368`): 6/6 controls caught, self-contradiction flagged by `self_consistent` alone |
 | 2026-11-19 | Script tool decisions inside the real agent loop instead of relying on model compliance | Five failure modes need deterministic, repeatable tool spans; a live endpoint cannot guarantee them | Verified in exp 011: five cases, exact tool names/args/counts asserted on fetched traces; advertised schemas read from `mlflow.chat.tools`, no judge calls |
 | 2026-11-19 | Keep correctness and efficiency as separate scorers, and pass `expectations={}` to stay ground-truth-free | `expected_tool_calls` flips the default correctness scorer into fuzzy mode; efficiency measures redundancy, not task completion | Verified in exp 012: both correctness modes agree on all five cases, but efficiency says `yes` on `tool_no_call` where both correctness modes say `no` |
+| 2026-11-19 | Resolved the four remaining open questions from practice: shared demo path with env override, UC storage deferred, correctness-first scorer priority, pin deps on next venv rebuild | 12 experiments and a stable demo give direct answers; pinning waits for a clean-install test because `databricks-langchain` needs `--no-deps` on Python 3.15 | Decisions in §7; F-011 deferred, F-012 carries the pin/rebuild action; no code or environment changed |
 
 ## 9. Change log
 
@@ -178,6 +183,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-19 | Added `trace_tool_calls.py`, experiment 011, and `docs/demo/tool_call_manifest.json` | Five tool-call cases verified from fetched spans with zero judge calls; existing scripts and eight evidence traces untouched |
 | 2026-11-19 | Added `evaluate_tool_calls.py`, experiment 012, and three tool-call scorer configs | Judged the 011 traces twice with no `predict_fn`; 8 scorers registered in total (5 output + 3 tool-call), no automatic monitoring; eight evidence traces still intact |
 | 2026-11-19 | Added five real tool-call UI screenshots and a dedicated Act 5C deck slide | Captured from the local MLflow UI over copied Databricks traces; wrong-args shot selects the tool span so `city=NYC` is visible; deck is now 8 slides |
+| 2026-11-19 | Resolved all four remaining §7 open questions; updated the F-011/F-012 backlog, FINDINGS, and the README dependency note | Decisions grounded in 001–012 evidence and the working venv; implementation actions stay parked in F-010/F-011/F-012 |
 
 ---
 *Keep entries factual, link to traces/evidence, and prefer small reproducible experiments over large undocumented changes.*

@@ -142,4 +142,4 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 - Standardize tags across every script (F-010), then use the suite for A/B comparisons (F-014) and monitoring (F-013).
 - Add a legitimate failure-plus-retry control so the efficiency judge can be checked for false positives on recovery (F-015).
 - Promote the exp 011/012 tool-call cases and three verdicts into F-014's standing A/B regression set.
-- Decide on Unity Catalog trace storage and shared vs project-specific experiment paths (F-011, open questions in the lab book).
+- [x] Decide on Unity Catalog trace storage and shared vs project-specific experiment paths → resolved in [LAB_BOOK.md](LAB_BOOK.md) §7: keep the shared demo path with an env override, defer UC storage (F-011).
