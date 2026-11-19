@@ -2,7 +2,7 @@
 
 **Total Runtime:** ~7 minutes (~9 minutes with one optional act, ~11 with both). For a 4-minute cut, run Act 1 and Act 5 only.
 
-**Story shape:** show the result first, explain it second, prove it third. Companion deck: `DEMO_DECK.html` (7 slides with real MLflow UI screenshots from the experiment — see `docs/demo/README.md` for provenance). The deck is a visual reference; the terminal and the Databricks Traces tab remain the live screens.
+**Story shape:** show the result first, explain it second, prove it third. Companion deck: `DEMO_DECK.html` (8 slides with real MLflow UI screenshots from the experiment, including the tool-call waterfall — see `docs/demo/README.md` for provenance). The deck is a visual reference; the terminal and the Databricks Traces tab remain the live screens.
 
 | Act | What the audience sees | Time |
 | --- | --- | --- |

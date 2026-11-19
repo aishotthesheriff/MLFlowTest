@@ -177,6 +177,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-19 | Added `self_consistent` `Guidelines` judge and experiment 010 | Self-contradiction control caught only by the rubric judge; 6/6 controls caught; suite is now 5 registered scorers |
 | 2026-11-19 | Added `trace_tool_calls.py`, experiment 011, and `docs/demo/tool_call_manifest.json` | Five tool-call cases verified from fetched spans with zero judge calls; existing scripts and eight evidence traces untouched |
 | 2026-11-19 | Added `evaluate_tool_calls.py`, experiment 012, and three tool-call scorer configs | Judged the 011 traces twice with no `predict_fn`; 8 scorers registered in total (5 output + 3 tool-call), no automatic monitoring; eight evidence traces still intact |
+| 2026-11-19 | Added five real tool-call UI screenshots and a dedicated Act 5C deck slide | Captured from the local MLflow UI over copied Databricks traces; wrong-args shot selects the tool span so `city=NYC` is visible; deck is now 8 slides |
 
 ---
 *Keep entries factual, link to traces/evidence, and prefer small reproducible experiments over large undocumented changes.*

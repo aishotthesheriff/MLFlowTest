@@ -19,7 +19,7 @@ spans, timings, inputs/outputs, tags and error events all came from Databricks.
 the full trace data. Timings, token usage, tags and metadata are intact.
 
 What it **does not** preserve: the original trace IDs. MLflow assigns new IDs
-on copy. `trace_map.json` records `old_id` → `new_id` for all 34 traces, so each
+on copy. `trace_map.json` records `old_id` → `new_id` for every copied trace, so each
 screenshot can be traced back to the Databricks original cited in
 [LAB_BOOK.md](../LAB_BOOK.md). The six cited mappings are:
 
@@ -31,6 +31,17 @@ screenshot can be traced back to the Databricks original cited in
 | 05 tool error | `tr-cbd09f84a14aa356cfffb614bb4583c0` | `tr-651bee5671295a29be3a4c6b2ec8729f` |
 | 06 unhandled | `tr-3dbea41e598c727874df4a43ed18e897` | `tr-f53de5648d3b7f9ceed011b4c70b702e` |
 | 07 handled | `tr-193c937a2ab7790e06969f4bb3730a85` | `tr-1c0d8c12605f1c535f474129f66387cb` |
+
+The five tool-call cases from experiment 011 use the same path, with these
+additional mappings:
+
+| Screenshot | Databricks original | Local copy |
+| --- | --- | --- |
+| 09 tool happy | `tr-218c33b979b86c0e958d546aefa23a64` | `tr-f76443b19357764359d2537bdb103a0c` |
+| 10 tool no-call | `tr-8f166650ff924e86b7726829d3c81911` | `tr-e6eff0d8b7be76965f9e3c45210ff02d` |
+| 11 tool wrong-tool | `tr-1dd34cbcfd3fd9b4fa0231314015da11` | `tr-b13225c85a997f5330367df7daab202e` |
+| 12 tool wrong-args | `tr-9f9dab49618b133d824747d8515b0104` | `tr-ba4e062f61a4a44599fafa0169cac55d` |
+| 13 tool retry-storm | `tr-ba8b262cff37fa530c2d4a7291b87d82` | `tr-859f09b6f20a080fa18ffc15af15586a` |
 
 The JSON map deliberately excludes trace tags because they include an
 individual's email address.
@@ -47,8 +58,15 @@ individual's email address.
 | `06-unhandled-error.png` | Unhandled exception: trace `ERROR`, one span |
 | `07-handled-error.png` | Handled failure: child span `ERROR`, trace still `OK` |
 | `08-error-rows.png` | Error and session rows in the traces list |
+| `09-tool-happy.png` | One `get_weather(city=SF)` TOOL span, inputs panel open |
+| `10-tool-no-call.png` | No TOOL span; both tools still advertised on the model span |
+| `11-tool-wrong-tool.png` | `get_temperature(city=SF)` TOOL span with its inputs |
+| `12-tool-wrong-args.png` | `get_weather(city=NYC)` TOOL span — the injected defect, visible in inputs |
+| `13-tool-retry-storm.png` | Three `get_weather(city=SF)` TOOL spans, all OK |
 
-All captures are 3200 × 1800 (1600 × 900 viewport at 2× device scale).
+All captures are 3200 × 1800 (1600 × 900 viewport at 2× device scale). The
+tool-call shots select the tool span before capture so the Inputs/Outputs panel
+shows the real arguments; `shoot.js` does this via each target's `selectSpan`.
 
 ## Regenerate
 
@@ -70,7 +88,12 @@ PLAYWRIGHT_MODULE=/path/to/node_modules/playwright node docs/demo/shoot.js
 `shoot.js` resolves each target's original trace prefix through
 `trace_map.json`, so a fresh copy does not require editing the script.
 `MLFLOW_UI_URL` and `MLFLOW_EXPERIMENT_ID` can override the defaults if the UI
-runs elsewhere or the copied experiment gets a different ID.
+runs elsewhere or the copied experiment gets a different ID. To add only the
+tool-call shots without recapturing the original eight:
+
+```bash
+SHOOT_ONLY=218c33b9,8f166650,1dd34cbc,9f9dab49,ba8b262c node docs/demo/shoot.js
+```
 
 The deck references these files with relative paths, so open
 `DEMO_DECK.html` from the repository root (or serve the repo over HTTP) —

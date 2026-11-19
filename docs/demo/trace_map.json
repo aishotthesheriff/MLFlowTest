@@ -236,5 +236,40 @@
     "name": "LangGraph",
     "status": "OK",
     "spans": 15
+  },
+  {
+    "old_id": "tr-ba8b262cff37fa530c2d4a7291b87d82",
+    "new_id": "tr-859f09b6f20a080fa18ffc15af15586a",
+    "name": "tool_case_tool_retry_storm",
+    "status": "OK",
+    "spans": 16
+  },
+  {
+    "old_id": "tr-9f9dab49618b133d824747d8515b0104",
+    "new_id": "tr-ba4e062f61a4a44599fafa0169cac55d",
+    "name": "tool_case_tool_wrong_args",
+    "status": "OK",
+    "spans": 8
+  },
+  {
+    "old_id": "tr-1dd34cbcfd3fd9b4fa0231314015da11",
+    "new_id": "tr-b13225c85a997f5330367df7daab202e",
+    "name": "tool_case_tool_wrong_tool",
+    "status": "OK",
+    "spans": 8
+  },
+  {
+    "old_id": "tr-8f166650ff924e86b7726829d3c81911",
+    "new_id": "tr-e6eff0d8b7be76965f9e3c45210ff02d",
+    "name": "tool_case_tool_no_call",
+    "status": "OK",
+    "spans": 4
+  },
+  {
+    "old_id": "tr-218c33b979b86c0e958d546aefa23a64",
+    "new_id": "tr-f76443b19357764359d2537bdb103a0c",
+    "name": "tool_case_tool_happy",
+    "status": "OK",
+    "spans": 8
   }
 ]

@@ -32,6 +32,11 @@ const targets = [
   { file: '06-unhandled-error.png',    trace: '3dbea41e', note: 'unhandled error' },
   { file: '07-handled-error.png',      trace: '193c937a', note: 'handled error' },
   { file: '08-error-rows.png',         url: `#/experiments/${EXP}/traces`, note: 'error + session rows', scrollTo: 380 },
+  { file: '09-tool-happy.png',         trace: '218c33b9', selectSpan: 'get_weather',    note: 'one get_weather(SF) tool span' },
+  { file: '10-tool-no-call.png',       trace: '8f166650', note: 'no tool span, both tools advertised' },
+  { file: '11-tool-wrong-tool.png',    trace: '1dd34cbc', selectSpan: 'get_temperature', note: 'get_temperature(SF) tool span' },
+  { file: '12-tool-wrong-args.png',    trace: '9f9dab49', selectSpan: 'get_weather',    note: 'get_weather(NYC) tool span' },
+  { file: '13-tool-retry-storm.png',   trace: 'ba8b262c', selectSpan: 'get_weather',    note: 'three get_weather(SF) tool spans' },
 ];
 
 // Fallback IDs are the ones visible in the committed screenshots.
@@ -42,6 +47,11 @@ const FALLBACK = {
   'cbd09f84': 'tr-651bee5671295a29be3a4c6b2ec8729f',
   '3dbea41e': 'tr-f53de5648d3b7f9ceed011b4c70b702e',
   '193c937a': 'tr-1c0d8c12605f1c535f474129f66387cb',
+  '218c33b9': 'tr-f76443b19357764359d2537bdb103a0c',
+  '8f166650': 'tr-e6eff0d8b7be76965f9e3c45210ff02d',
+  '1dd34cbc': 'tr-b13225c85a997f5330367df7daab202e',
+  '9f9dab49': 'tr-ba4e062f61a4a44599fafa0169cac55d',
+  'ba8b262c': 'tr-859f09b6f20a080fa18ffc15af15586a',
 };
 
 function localId(prefix) {
@@ -55,7 +65,12 @@ function localId(prefix) {
   throw new Error(`no local trace ID for ${prefix}; run copy_traces.py first`);
 }
 
-for (const t of targets) {
+// SHOOT_ONLY limits captures to a comma-separated list of original trace
+// prefixes, so new screenshots can be added without recapturing existing ones.
+const only = process.env.SHOOT_ONLY ? process.env.SHOOT_ONLY.split(',') : null;
+const selected = only ? targets.filter(t => t.trace && only.includes(t.trace)) : targets;
+
+for (const t of selected) {
   if (t.trace) t.url = `#/experiments/${EXP}/traces?traceId=${localId(t.trace)}`;
 }
 
@@ -66,7 +81,7 @@ for (const t of targets) {
     deviceScaleFactor: 2,
   });
   const page = await ctx.newPage();
-  for (const t of targets) {
+  for (const t of selected) {
     await page.goto(BASE + '/' + t.url, { waitUntil: 'domcontentloaded' });
     // The guidance popover renders after load; dismiss it before capturing.
     await page.waitForTimeout(1200);
@@ -84,6 +99,16 @@ for (const t of targets) {
       await page.waitForTimeout(500);
     }
     await page.waitForTimeout(1500);
+    if (t.selectSpan) {
+      // Selecting the tool span opens its Inputs/Outputs panel, so the captured
+      // pixels show the actual tool arguments, not just the span name.
+      try {
+        await page.locator('span', { hasText: t.selectSpan }).first().click({ timeout: 5000 });
+        await page.waitForTimeout(900);
+      } catch (e) {
+        console.warn(`  could not select span ${t.selectSpan} in ${t.file}: ${e.message}`);
+      }
+    }
     if (t.scrollTo) {
       await page.evaluate(y => {
         const el = Array.from(document.querySelectorAll('*')).find(

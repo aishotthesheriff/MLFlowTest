@@ -79,7 +79,7 @@
   <div class="grow"></div>
   <div class="kicker">Live demo · Databricks MLflow 3 GenAI</div>
   <h1>GenAI tracing you can<br>actually prove</h1>
-  <p class="muted" style="font-size:28px;max-width:1150px">Seven experiments behind a single loop: trace → inspect → measure → evaluate → document. Real traces, real screenshots, no external LLM key.</p>
+  <p class="muted" style="font-size:28px;max-width:1150px">Twelve experiments behind a single loop: trace → inspect → measure → evaluate → document. Real traces, real screenshots, no external LLM key.</p>
   <div class="grow"></div>
   <div class="row" style="gap:12px">
     <span class="tag">Databricks FM</span><span class="tag">Autolog + manual spans</span>
@@ -220,7 +220,32 @@
   <aside class="notes">Latency, tokens and cost are first-class TraceInfo fields. Answerless error traces have null usage and drag mixed aggregates. Eight scorers are now registered (five output-level, three tool-call) — this is a harness, not a one-off. Run <code>evaluate_traces.py --pilot --with-controls</code> for the output controls; then <code>trace_tool_calls.py</code> to verify five tool traces with zero judge calls and <code>evaluate_tool_calls.py</code> to judge them twice with no <code>predict_fn</code>. The report names the verdict from each scorer and keeps errors distinct from "no".</aside>
 </section>
 
-<!-- 7. CLOSE -->
+<!-- 7. ACT 5C: TOOL CALLS (OPTIONAL) -->
+<section class="slide" data-title="Act 5C — Tool calls">
+  <div class="kicker">Act 5C · Optional · Prove behavior</div>
+  <h2>Prove what the agent did — then judge it</h2>
+  <div class="row">
+    <div class="frame half">
+      <img src="docs/demo/screenshots/13-tool-retry-storm.png" alt="Retry storm trace with three get_weather tool spans">
+      <span class="badge">3 × get_weather(city=SF)</span>
+      <div class="cap">Three successful calls, identical arguments — three separate TOOL spans, all OK</div>
+    </div>
+    <div class="frame half">
+      <img src="docs/demo/screenshots/12-tool-wrong-args.png" alt="Wrong-args trace with get_weather called for NYC">
+      <span class="badge">city = NYC</span>
+      <div class="cap">Wrong city injected before the traced call; the span records the defect, not SF</div>
+    </div>
+  </div>
+  <div class="row" style="margin-top:16px">
+    <div class="card" style="flex:1"><div class="big" style="font-size:42px">5 × 3 × 2</div><div class="label">verified traces × scorers × repetitions</div></div>
+    <div class="card" style="flex:1"><div class="big" style="font-size:42px">yes/no/no/no/no</div><div class="label">exact-match sequence, both repetitions</div></div>
+    <div class="card" style="flex:1"><div class="big" style="font-size:42px">0 flips</div><div class="label">0 scorer errors · efficiency ≠ correctness</div></div>
+  </div>
+  <div class="callout" style="margin-top:16px">No <code>predict_fn</code>: the five verified traces are the evidence. Both correctness modes agree on all five cases — exact match buys an auditable rationale, not a different verdict. On <code>tool_no_call</code>, efficiency says <b>yes</b> where correctness says <b>no</b>: doing nothing is efficient and still wrong.</div>
+  <aside class="notes">Five scripted cases run through the real create_agent + autolog loop; every trace was fetched back and its tool names, arguments, counts and outcomes asserted with zero judge calls before a manifest was written. Then three scorer configurations judge those same traces twice, joined by trace_id with a scenario re-check. Run <code>trace_tool_calls.py</code> then <code>evaluate_tool_calls.py</code>. Limits: five unambiguous traces, two repetitions — a smoke test, not a stability guarantee for borderline cases.</aside>
+</section>
+
+<!-- 8. CLOSE -->
 <section class="slide" data-title="Close">
   <div class="kicker">Close · Honest limit</div>
   <h2>The pipeline is the achievement.<br>The limits are the next experiment.</h2>
