@@ -206,14 +206,18 @@
         <div class="big">4.3 s</div><div class="label">slowest of 17 traces</div>
         <p class="small">~100% model time (2,742 + 1,530 ms); graph/tool overhead ~4 ms.</p>
       </div>
-      <div class="card">
+      <div class="card" style="margin-bottom:14px">
         <div class="big">3 + 6</div><div class="label">clean records + planted controls</div>
         <p class="small">3/3 clean pass every scorer; 6/6 controls caught; full run: 16 × 5, 0 failed, 3 skipped.</p>
+      </div>
+      <div class="card">
+        <div class="big">5 × 3 × 2</div><div class="label">tool traces × scorers × repetitions</div>
+        <p class="small">Exact-match sequence yes/no/no/no/no in both reps; zero flips, zero errors. Efficiency says <b>yes</b> on no-call where correctness says no.</p>
       </div>
     </div>
   </div>
   <div class="callout" style="margin-top:14px">A live run scored "New York City" as <code>False</code> for expected "NYC" — fixed with an alias map. Six planted controls are caught <b>6/6</b>, and two are caught by exactly one scorer: <i>right city, wrong fact</i> by the ground-truth fact check, and <i>right fact, self-contradictory</i> ("cloudy, but sunny and 95F") by a scoped rubric judge that needs no expected facts.</div>
-  <aside class="notes">Latency, tokens and cost are first-class TraceInfo fields. Answerless error traces have null usage and drag mixed aggregates. The five scorers are registered in the experiment — this is a harness, not a one-off. Run <code>evaluate_traces.py --pilot --with-controls</code> for this slide: the clean rows stay green, every planted control is flagged, and the report names the control each single-scorer check caught.</aside>
+  <aside class="notes">Latency, tokens and cost are first-class TraceInfo fields. Answerless error traces have null usage and drag mixed aggregates. Eight scorers are now registered (five output-level, three tool-call) — this is a harness, not a one-off. Run <code>evaluate_traces.py --pilot --with-controls</code> for the output controls; then <code>trace_tool_calls.py</code> to verify five tool traces with zero judge calls and <code>evaluate_tool_calls.py</code> to judge them twice with no <code>predict_fn</code>. The report names the verdict from each scorer and keeps errors distinct from "no".</aside>
 </section>
 
 <!-- 7. CLOSE -->
@@ -222,11 +226,12 @@
   <h2>The pipeline is the achievement.<br>The limits are the next experiment.</h2>
   <ul class="muted">
     <li>Repeatable loop: trace → inspect → measure → evaluate → document.</li>
-    <li>11 short weather answers from one toy agent — plus 6 planted controls — prove the pipeline works, not production quality.</li>
-    <li>Next: full-run controls + a correctness judge with expected facts + A/B comparisons (F-014), tag conventions (F-010), monitoring (F-013).</li>
+    <li>11 short weather answers, 6 planted controls, and 5 clean tool traces prove the pipeline works, not production quality.</li>
+    <li>Tool-call judges agree across two repetitions; exact match buys an auditable rationale, not a different verdict. Efficient can still be wrong.</li>
+    <li>Next: full-run controls + a legitimate failure-and-retry case (F-015) + A/B comparisons (F-014), tag conventions (F-010), monitoring (F-013).</li>
   </ul>
   <div class="grow"></div>
-  <div class="callout">Writeups: <code>docs/LAB_BOOK.md</code> · <code>docs/experiments/001–010</code> · <code>docs/FINDINGS_AND_LEARNINGS.md</code></div>
+  <div class="callout">Writeups: <code>docs/LAB_BOOK.md</code> · <code>docs/experiments/001–012</code> · <code>docs/FINDINGS_AND_LEARNINGS.md</code></div>
   <aside class="notes">Leave the Traces tab open for Q&amp;A and open questions about trace IDs, scorer design, and cost.</aside>
 </section>
 

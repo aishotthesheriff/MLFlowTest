@@ -1,0 +1,220 @@
+{
+  "manifest": "docs/demo/tool_call_manifest.json",
+  "manifest_session_id": "lab-f011-1795112059",
+  "expectation": {
+    "expected_tool_calls": [
+      {
+        "name": "get_weather",
+        "arguments": {
+          "city": "SF"
+        }
+      }
+    ]
+  },
+  "run_ids": {
+    "rep1": {
+      "unaided": "bf9d9e0a1cc44b188d074a4765ca72b8",
+      "exact": "6661dc371beb41a889d3452ae61ac5a8"
+    },
+    "rep2": {
+      "unaided": "3c0ad95e42e642d39d017785b03e676f",
+      "exact": "bbbb4b81beca4ae6a49af77708d47fea"
+    }
+  },
+  "repetitions": [
+    {
+      "repeat": 1,
+      "rows": [
+        {
+          "case": "tool_happy",
+          "trace_id": "tr-218c33b979b86c0e958d546aefa23a64",
+          "scenario": "tool_calls",
+          "tool_call_correctness": {
+            "value": "yes",
+            "rationale": "Let's think step by step. The user requested the current weather and cloud cover in San Francisco (SF). The agent correctly chose the 'get_weather' tool, which is specifically designed to retrieve current weather information, including cloud cover, for a specified city. The input argument 'city': 'S"
+          },
+          "tool_call_efficiency": {
+            "value": "yes",
+            "rationale": "Let's think step by step. The agent called the 'get_weather' tool with the argument 'SF' to retrieve the current weather and cloud cover for San Francisco, which directly addresses the user's request. There are no repeated calls to the same tool with identical arguments, and the call made is singula"
+          },
+          "tool_call_correctness_exact": {
+            "value": "yes",
+            "rationale": "All expected tool calls present (order ignored)."
+          }
+        },
+        {
+          "case": "tool_no_call",
+          "trace_id": "tr-8f166650ff924e86b7726829d3c81911",
+          "scenario": "tool_calls",
+          "tool_call_correctness": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user's request explicitly asks for the current weather and cloud cover in San Francisco. The available tool 'get_weather' is designed to provide current weather and cloud cover for a specified city, making it an obviously appropriate tool for this request. The agent did"
+          },
+          "tool_call_efficiency": {
+            "value": "yes",
+            "rationale": "Let's think step by step. The user requested information about the current weather and cloud cover in San Francisco. The available tool 'get_weather' is specifically designed to provide this information. However, no tools were called by the agent. Since there were no tool calls made, there are no re"
+          },
+          "tool_call_correctness_exact": {
+            "value": "no",
+            "rationale": "Expected 1 tool call(s), but got 0 tool call(s)."
+          }
+        },
+        {
+          "case": "tool_wrong_tool",
+          "trace_id": "tr-1dd34cbcfd3fd9b4fa0231314015da11",
+          "scenario": "tool_calls",
+          "tool_call_correctness": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user requested the current weather and cloud cover in San Francisco (SF). The appropriate tool for this request is 'get_weather', which is specifically designed to provide both weather and cloud cover information. The agent, however, chose to use 'get_temperature', whic"
+          },
+          "tool_call_efficiency": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user requested information about the current weather and cloud cover in SF, which is specifically addressed by the 'get_weather' tool. However, the agent called 'get_temperature' instead, which only provides the temperature and does not fulfill the user's request for we"
+          },
+          "tool_call_correctness_exact": {
+            "value": "no",
+            "rationale": "Missing: {'get_weather({\"city\": \"SF\"})'}; Unexpected: {'get_temperature({\"city\": \"SF\"})'}"
+          }
+        },
+        {
+          "case": "tool_wrong_args",
+          "trace_id": "tr-9f9dab49618b133d824747d8515b0104",
+          "scenario": "tool_calls",
+          "tool_call_correctness": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user requested the current weather and cloud cover in San Francisco (SF), which necessitates using the 'get_weather' tool. However, the agent incorrectly called 'get_weather' with the argument {'city': 'NYC'} instead of the required 'SF'. This means the tool was not use"
+          },
+          "tool_call_efficiency": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user requested the current weather and cloud cover in San Francisco (SF), but the agent called the 'get_weather' tool with the city set to 'NYC'. This call is not only to the wrong city but also does not fulfill the user's request. Since the tool was called with incorre"
+          },
+          "tool_call_correctness_exact": {
+            "value": "no",
+            "rationale": "Missing: {'get_weather({\"city\": \"SF\"})'}; Unexpected: {'get_weather({\"city\": \"NYC\"})'}"
+          }
+        },
+        {
+          "case": "tool_retry_storm",
+          "trace_id": "tr-ba8b262cff37fa530c2d4a7291b87d82",
+          "scenario": "tool_calls",
+          "tool_call_correctness": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user requested the current weather and cloud cover in San Francisco (SF). The agent correctly identified that the 'get_weather' tool is appropriate for this request, as it is designed to provide current weather information for a specified city. However, the agent made t"
+          },
+          "tool_call_efficiency": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user's request is to get the current weather and cloud cover in SF. The agent called the get_weather tool three times with the exact same argument {'city': 'SF'}. Each call returned the same response, indicating no change in information. There is no indication that any "
+          },
+          "tool_call_correctness_exact": {
+            "value": "no",
+            "rationale": "Expected 1 tool call(s), but got 3 tool call(s)."
+          }
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "rows": [
+        {
+          "case": "tool_happy",
+          "trace_id": "tr-218c33b979b86c0e958d546aefa23a64",
+          "scenario": "tool_calls",
+          "tool_call_correctness": {
+            "value": "yes",
+            "rationale": "Let's think step by step. The user requested the current weather and cloud cover in San Francisco (SF). The agent correctly chose the 'get_weather' tool, which is specifically designed to retrieve the current weather and cloud cover for a city. The input argument 'city' was provided as 'SF', which i"
+          },
+          "tool_call_efficiency": {
+            "value": "yes",
+            "rationale": "Let's think step by step. The agent received a request to find out the current weather and cloud cover in SF. The only tool called was 'get_weather', which is appropriate for this request as it provides the necessary information. There were no repeated calls to the same tool with identical arguments"
+          },
+          "tool_call_correctness_exact": {
+            "value": "yes",
+            "rationale": "All expected tool calls present (order ignored)."
+          }
+        },
+        {
+          "case": "tool_no_call",
+          "trace_id": "tr-8f166650ff924e86b7726829d3c81911",
+          "scenario": "tool_calls",
+          "tool_call_correctness": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user's request explicitly asks for the current weather and cloud cover in San Francisco. The available tool 'get_weather' is designed to provide current weather and cloud cover for a specified city, making it an obviously appropriate tool for this request. The agent did"
+          },
+          "tool_call_efficiency": {
+            "value": "yes",
+            "rationale": "Let's think step by step. The user requested information about the current weather and cloud cover in San Francisco. The available tool 'get_weather' is specifically designed to provide this information. However, no tools were called at all. Since the agent did not utilize any tools, there are no re"
+          },
+          "tool_call_correctness_exact": {
+            "value": "no",
+            "rationale": "Expected 1 tool call(s), but got 0 tool call(s)."
+          }
+        },
+        {
+          "case": "tool_wrong_tool",
+          "trace_id": "tr-1dd34cbcfd3fd9b4fa0231314015da11",
+          "scenario": "tool_calls",
+          "tool_call_correctness": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user's request is to know the current weather and cloud cover in San Francisco. The available tools include 'get_weather', which specifically provides current weather and cloud cover, and 'get_temperature', which only provides temperature. The agent called 'get_temperat"
+          },
+          "tool_call_efficiency": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user requested information about the current weather and cloud cover in SF, which is specifically addressed by the 'get_weather' tool. However, the agent called 'get_temperature' instead, which only provides the temperature and does not fulfill the user's request for we"
+          },
+          "tool_call_correctness_exact": {
+            "value": "no",
+            "rationale": "Missing: {'get_weather({\"city\": \"SF\"})'}; Unexpected: {'get_temperature({\"city\": \"SF\"})'}"
+          }
+        },
+        {
+          "case": "tool_wrong_args",
+          "trace_id": "tr-9f9dab49618b133d824747d8515b0104",
+          "scenario": "tool_calls",
+          "tool_call_correctness": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user requested the current weather and cloud cover in San Francisco (SF), which necessitates using the 'get_weather' tool. However, the agent incorrectly called 'get_weather' with the argument {'city': 'NYC'} instead of the required 'SF'. This means the agent failed to "
+          },
+          "tool_call_efficiency": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user requested the current weather and cloud cover in San Francisco (SF), but the agent called the 'get_weather' tool with the city 'NYC' instead. This call is not only to a different city but also does not fulfill the user's request. Since the tool call does not addres"
+          },
+          "tool_call_correctness_exact": {
+            "value": "no",
+            "rationale": "Missing: {'get_weather({\"city\": \"SF\"})'}; Unexpected: {'get_weather({\"city\": \"NYC\"})'}"
+          }
+        },
+        {
+          "case": "tool_retry_storm",
+          "trace_id": "tr-ba8b262cff37fa530c2d4a7291b87d82",
+          "scenario": "tool_calls",
+          "tool_call_correctness": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user requested the current weather and cloud cover in San Francisco (SF). The agent correctly identified that the 'get_weather' tool is appropriate for this request, as it is designed to provide current weather information for a city. However, the agent made three ident"
+          },
+          "tool_call_efficiency": {
+            "value": "no",
+            "rationale": "Let's think step by step. The user's request was to get the current weather and cloud cover in SF. The agent called the get_weather tool three times with the exact same argument {'city': 'SF'}. Each call returned the same response successfully. Since there were no transient errors or failures indica"
+          },
+          "tool_call_correctness_exact": {
+            "value": "no",
+            "rationale": "Expected 1 tool call(s), but got 3 tool call(s)."
+          }
+        }
+      ]
+    }
+  ],
+  "flips": [
+    {
+      "scorer": "tool_call_correctness",
+      "flips": []
+    },
+    {
+      "scorer": "tool_call_efficiency",
+      "flips": []
+    },
+    {
+      "scorer": "tool_call_correctness_exact",
+      "flips": []
+    }
+  ]
+}

@@ -28,7 +28,7 @@ A living lab notebook for Databricks MLflow 3 GenAI tracing experiments in this 
 | Default experiment | `/Shared/my-first-trace` (override via `MLFLOW_EXPERIMENT_NAME`) |
 | Sample LLM | Databricks FM endpoint `databricks-gpt-oss-20b` via `ChatDatabricks` (no external key); override with `DATABRICKS_MODEL_ENDPOINT` |
 | Judge model | `databricks` managed judge (MLflow default on Databricks tracking); no external key |
-| Key scripts | `trace_example.py`, `trace_manual_spans.py`, `trace_multi_turn.py`, `trace_errors.py`, `trace_tool_calls.py`, `analyze_trace_metrics.py`, `evaluate_traces.py`, `.env.example`, `requirements.txt`, `README.md` |
+| Key scripts | `trace_example.py`, `trace_manual_spans.py`, `trace_multi_turn.py`, `trace_errors.py`, `trace_tool_calls.py`, `analyze_trace_metrics.py`, `evaluate_traces.py`, `evaluate_tool_calls.py`, `.env.example`, `requirements.txt`, `README.md` |
 
 > Update this table when dependencies, workspace targets, models, or auth method change.
 
@@ -72,6 +72,7 @@ View traces: Databricks **Experiments** → experiment (default `/Shared/my-firs
 | 009 | 2026-11-19 | Right city, wrong fact: factuality check | Completed | `/Shared/my-first-trace` | `evaluate_traces.py --pilot --with-controls`, 3 clean + 5 planted controls, `answers_expected_fact` ground-truth check | Success: run `d4e336016b264b8c84720015f550dd3a`; clean 3/3, controls 5/5 caught, right-city-wrong-fact caught only by the fact check | [009-factuality-check.md](experiments/009-factuality-check.md) |
 | 010 | 2026-11-19 | Self-contradiction rubric judge (no expected facts) | Completed | `/Shared/my-first-trace` | `evaluate_traces.py --pilot --with-controls`, 3 clean + 6 planted controls, `Guidelines` self-consistency judge | Success: pilot `30eabe1d8fdf4540a8ef9c8ee5dae368`, controls 6/6 caught, self-contradiction caught only by the judge; full run `99060446d0004248a3f0acab278408d6` all 1.0 | [010-self-consistency-judge.md](experiments/010-self-consistency-judge.md) |
 | 011 | 2026-11-19 | Tool-call tracing: capture and verify what the agent did (F-015) | Completed | `/Shared/my-first-trace` | `trace_tool_calls.py`, scripted `GenericFakeChatModel` in real `create_agent` loop, 5 injected tool cases, direct span assertions, zero judge calls | Success: 5 traces in session `lab-f011-1795112059`, all expected tool names/args/counts/outcomes verified, both tools advertised in every case, manifest `docs/demo/tool_call_manifest.json` | [011-tool-call-tracing.md](experiments/011-tool-call-tracing.md) |
+| 012 | 2026-11-19 | Judge the 011 tool-call traces with correctness and efficiency scorers (F-015) | Completed | `/Shared/my-first-trace` (depends on exp 011 manifest/traces) | `evaluate_tool_calls.py --register` then `evaluate_tool_calls.py`; 2 repetitions x 2 passes, no `predict_fn`, trace column only, 3 scorer configs | Success: 4 runs (`bf9d9e0a…`, `6661dc37…`, `3c0ad95e…`, `bbbb4b81…`), 5 complete scenario rows per repetition, exact sequence `yes,no,no,no,no` in both, zero flips/errors; efficiency says `yes` on `tool_no_call` where both correctness modes say `no` | [012-tool-call-judges.md](experiments/012-tool-call-judges.md) |
 
 **Status legend:** Planned · In progress · Completed · Blocked · Abandoned
 
@@ -95,6 +96,7 @@ Individual writeups live in [`docs/experiments/`](experiments/):
 - [009-factuality-check.md](experiments/009-factuality-check.md) — right-city-wrong-fact control, reference-based fact check, skip semantics
 - [010-self-consistency-judge.md](experiments/010-self-consistency-judge.md) — scoped `Guidelines` rubric judge, self-contradiction control, no expected facts
 - [011-tool-call-tracing.md](experiments/011-tool-call-tracing.md) — scripted tool calls, five verified span patterns, zero judge calls
+- [012-tool-call-judges.md](experiments/012-tool-call-judges.md) — two correctness modes + efficiency on the same five traces, two repetitions, zero flips
 
 ---
 
@@ -124,8 +126,8 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | F-011 | Unity Catalog trace storage | UC-backed trace storage improves governance/queryability for this workflow. | Medium | M | UC permissions/config | Proposed | Follow [trace-unity-catalog](https://docs.databricks.com/aws/en/mlflow3/genai/tracing/trace-unity-catalog); compare limits/capabilities. |
 | F-012 | Experiment organization strategy | Separate dev/test/prod experiments and naming conventions reduce clutter and risk. | Medium | S | Team/workspace conventions | Proposed | Propose path scheme, tags, and retention expectations. |
 | F-013 | Production-style monitoring/alerting workflow | Traces can feed dashboards/alerts for ongoing quality and performance monitoring. | Medium | L | Production-like workload | Proposed | Identify key signals and Databricks/Lakehouse integration path. |
-| F-014 | Prompt/version comparison (A/B) | Side-by-side traced runs make prompt/model changes measurable. | Medium | M | Variant configs | Proposed | Six known-bad controls via `--with-controls` (exps 008–010), including right-city-wrong-fact and self-contradiction, plus five tool-call cases from exp 011. Hold inputs constant; compare outputs, traces, and eval scores. Reuse `evaluate_traces.py` and the exp 012 tool-call evaluator. |
-| F-015 | Tool-call tracing and validation | Tool selection, arguments, and call count can be observed in spans and judged from the same traces. | High | M | Scripted model + fake service | In progress (exp 011) | Exp 011 produced five verified traces and a manifest; exp 012 will judge them with correctness and efficiency scorers. Follow-up: a failure-plus-retry case where retries are legitimate. |
+| F-014 | Prompt/version comparison (A/B) | Side-by-side traced runs make prompt/model changes measurable. | Medium | M | Variant configs | Proposed | Six known-bad output controls via `--with-controls` (exps 008–010), including right-city-wrong-fact and self-contradiction, plus five tool-call cases with three verdicts from exps 011–012. Hold inputs constant; compare outputs, traces, and eval scores. Reuse `evaluate_traces.py` and `evaluate_tool_calls.py`. |
+| F-015 | Tool-call tracing and validation | Tool selection, arguments, and call count can be observed in spans and judged from the same traces. | High | M | Scripted model + fake service | Completed (exps 011–012) | Exp 011 produced five verified traces and a manifest; exp 012 judged them with three scorer configurations over two repetitions (exact sequence `yes,no,no,no,no`, zero flips). Follow-up: a failure-plus-retry case where retries are legitimate, to confirm the efficiency judge does not punish recovery. |
 
 > Add new ideas freely; include a short hypothesis and dependency so they are actionable.
 
@@ -156,6 +158,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-19 | Add a reference-based factuality check; relevance is not truth | A right-city-wrong-fact answer passed city, relevance, and length; only ground truth catches it | Verified in exp 009 (`d4e336016b264b8c84720015f550dd3a`): 5/5 controls caught, right-city-wrong-fact flagged by `answers_expected_fact` alone |
 | 2026-11-19 | Add a scoped self-consistency rubric judge for answers that state the right fact and contradict it | No expected facts are needed when the defect is internal; the deterministic check cannot see it | Verified in exp 010 (`30eabe1d8fdf4540a8ef9c8ee5dae368`): 6/6 controls caught, self-contradiction flagged by `self_consistent` alone |
 | 2026-11-19 | Script tool decisions inside the real agent loop instead of relying on model compliance | Five failure modes need deterministic, repeatable tool spans; a live endpoint cannot guarantee them | Verified in exp 011: five cases, exact tool names/args/counts asserted on fetched traces; advertised schemas read from `mlflow.chat.tools`, no judge calls |
+| 2026-11-19 | Keep correctness and efficiency as separate scorers, and pass `expectations={}` to stay ground-truth-free | `expected_tool_calls` flips the default correctness scorer into fuzzy mode; efficiency measures redundancy, not task completion | Verified in exp 012: both correctness modes agree on all five cases, but efficiency says `yes` on `tool_no_call` where both correctness modes say `no` |
 
 ## 9. Change log
 
@@ -173,6 +176,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-19 | Added `answers_expected_fact` and experiment 009 | Right-city-wrong-fact control caught only by the fact check; 5/5 controls caught; scorer suite is now 4 registered scorers |
 | 2026-11-19 | Added `self_consistent` `Guidelines` judge and experiment 010 | Self-contradiction control caught only by the rubric judge; 6/6 controls caught; suite is now 5 registered scorers |
 | 2026-11-19 | Added `trace_tool_calls.py`, experiment 011, and `docs/demo/tool_call_manifest.json` | Five tool-call cases verified from fetched spans with zero judge calls; existing scripts and eight evidence traces untouched |
+| 2026-11-19 | Added `evaluate_tool_calls.py`, experiment 012, and three tool-call scorer configs | Judged the 011 traces twice with no `predict_fn`; 8 scorers registered in total (5 output + 3 tool-call), no automatic monitoring; eight evidence traces still intact |
 
 ---
 *Keep entries factual, link to traces/evidence, and prefer small reproducible experiments over large undocumented changes.*

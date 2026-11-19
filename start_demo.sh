@@ -31,7 +31,17 @@ EXPECTED_TRACES = [
     "054cbbc9", "0cb5f6d2", "e07c3271", "66e408aa", "6f99921d",
     "cbd09f84", "3dbea41e", "193c937a",
 ]
-EXPECTED_SCORERS = {"relevance_to_query", "answers_expected_city", "answers_expected_fact", "self_consistent", "response_length"}
+EXPECTED_SCORERS = {
+    "relevance_to_query", "answers_expected_city", "answers_expected_fact",
+    "self_consistent", "response_length",
+    "tool_call_correctness", "tool_call_correctness_exact", "tool_call_efficiency",
+}
+# (type name, model, should_exact_match, should_consider_ordering)
+EXPECTED_TOOL_SCORER_CONFIG = {
+    "tool_call_correctness": ("ToolCallCorrectness", "databricks", False, False),
+    "tool_call_efficiency": ("ToolCallEfficiency", "databricks", None, None),
+    "tool_call_correctness_exact": ("ToolCallCorrectness", "databricks", True, False),
+}
 
 failures = []
 try:
@@ -49,12 +59,27 @@ try:
             failures.append("missing evidence traces: " + ", ".join(missing))
         else:
             print(f"OK  evidence traces: {len(EXPECTED_TRACES)}/{len(EXPECTED_TRACES)} present (experiment has {len(traces)} traces)")
-        scorers = {getattr(s, "name", "") for s in mlflow.genai.list_scorers()}
-        absent = EXPECTED_SCORERS - scorers
+        scorers = {getattr(s, "name", ""): s for s in mlflow.genai.list_scorers()}
+        absent = EXPECTED_SCORERS - set(scorers)
         if absent:
-            failures.append("unregistered scorers: " + ", ".join(sorted(absent)) + " (run: python evaluate_traces.py --register)")
+            failures.append("unregistered scorers: " + ", ".join(sorted(absent)) + " (run: python evaluate_traces.py --register and python evaluate_tool_calls.py --register)")
         else:
             print("OK  scorers: " + ", ".join(sorted(EXPECTED_SCORERS)))
+            cfg_problems = []
+            for name, expected in EXPECTED_TOOL_SCORER_CONFIG.items():
+                s = scorers[name]
+                got = (
+                    type(s).__name__,
+                    getattr(s, "model", None),
+                    getattr(s, "should_exact_match", None),
+                    getattr(s, "should_consider_ordering", None),
+                )
+                if got != expected:
+                    cfg_problems.append(f"{name}: {got} != {expected}")
+            if cfg_problems:
+                failures.extend("scorer config mismatch: " + p for p in cfg_problems)
+            else:
+                print("OK  tool-call scorer config: correctness(exact=False,order=False), exact(exact=True,order=False), efficiency(model=databricks)")
 except Exception as exc:  # noqa: BLE001 - preflight should report any auth/API failure
     failures.append(f"{type(exc).__name__}: {exc}")
 
@@ -87,4 +112,6 @@ Ready. Run of show (see DEMO_SCRIPT.md):
   4  .venv/bin/python trace_errors.py           # error signatures
   5  .venv/bin/python analyze_trace_metrics.py  # latency / tokens / cost
      .venv/bin/python evaluate_traces.py --pilot --with-controls  # 3 clean + 6 planted controls
+  5C .venv/bin/python trace_tool_calls.py          # 5 tool-call cases; verified spans + manifest
+     .venv/bin/python evaluate_tool_calls.py       # judge them: 2 reps x 2 passes, no predict_fn
 EOF

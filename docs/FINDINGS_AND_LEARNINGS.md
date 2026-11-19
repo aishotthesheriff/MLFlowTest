@@ -1,6 +1,6 @@
 # Fixes, Findings & Learnings
 
-A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It collects the bugs we hit, the fixes that worked, the platform behaviors we confirmed, and the patterns we adopted across experiments 001-011. Source writeups live in [`docs/experiments/`](experiments/); the run log lives in [`docs/LAB_BOOK.md`](LAB_BOOK.md).
+A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It collects the bugs we hit, the fixes that worked, the platform behaviors we confirmed, and the patterns we adopted across experiments 001-012. Source writeups live in [`docs/experiments/`](experiments/); the run log lives in [`docs/LAB_BOOK.md`](LAB_BOOK.md).
 
 **Last updated:** 2026-11-19 · **Workspace:** `/Users/yourbabes/dev/Databricks/MLFlowTest` · **Experiment:** `/Shared/my-first-trace` (`1675992194464286`)
 
@@ -29,6 +29,8 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 | Rewriting a city inside a tool wrapper left `city="SF"` in the span | LangChain records tool arguments at tool entry | Inject the wrong argument into the scripted tool call before the traced invocation | [011](experiments/011-tool-call-tracing.md) |
 | Three service calls inside one tool body appeared as one `TOOL` span | Autolog traces the tool invocation boundary, not internal requests | Dispatch three separate tool calls through the boundary to get three spans | [011](experiments/011-tool-call-tracing.md) |
 | Fake model trace advertised no tool schemas | `bind_tools()` returning `self` drops the `tools` kwarg | Return a `RunnableBinding` carrying OpenAI schemas; autolog writes `mlflow.chat.tools` | [011](experiments/011-tool-call-tracing.md) |
+| Ground-truth-free correctness scorer behaved like a fuzzy matcher | A row carried `expected_tool_calls`, which switches the default scorer into matching mode | Pass `expectations={}` on every row of the unaided pass; reserve `expected_tool_calls` for the exact-match pass | [012](experiments/012-tool-call-judges.md) |
+| `ToolCallEfficiency.__call__()` rejected `expectations` | Unlike correctness, efficiency accepts only `trace` | Build rows with `expectations` only where the scorer supports it; `evaluate` passes no `predict_fn` here | [012](experiments/012-tool-call-judges.md) |
 
 ---
 
@@ -68,6 +70,9 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 - **Scripted decisions in a real agent loop give deterministic tool traces.** A `GenericFakeChatModel` emitting `AIMessage(tool_calls=...)` through `create_agent` + autolog produced exactly the intended `TOOL` spans for five injected cases, with no live endpoint. (exp 011)
 - **One tool call = one `TOOL` span; internal retries collapse.** Three service requests inside one tool body yield one span, so duplicate-call defects must be dispatched as three boundary-crossing tool calls. All three were kept successful because the efficiency rubric permits retries after failures. (exp 011)
 - **Advertised tool schemas are on the `CHAT_MODEL` span.** `mlflow.chat.tools` records every tool offered to the model, including the no-call case; the model's recorded bindings are a fallback. Reading them directly keeps trace verification at zero judge calls. (exp 011)
+- **Efficiency is not correctness.** On the no-call trace, both correctness modes said `no` while the efficiency judge said `yes` — doing nothing is maximally efficient and still wrong. Keep the two properties as separate scorers. (exp 012)
+- **Two correctness modes agreed on five clean-cut defects.** Ground-truth-free and exact-match returned the same verdicts; exact match earns its place with a deterministic, auditable rationale ("Expected 1, got 0/3"), not a different answer. (exp 012)
+- **Judge verdicts were stable on the five unambiguous cases.** Two repetitions of all three configurations produced zero flips and zero errors; that is a smoke test, not a flakiness guarantee for borderline cases. (exp 012)
 
 ### 2.2 Latency, tokens, cost
 - `TraceInfo.execution_time_ms`, `token_usage`, and `cost` are first-class fields — no re-run or extra API needed. Request metadata also carries `mlflow.trace.tokenUsage` / `mlflow.trace.cost`, but the first-class fields are simpler. (exp 006)
@@ -108,6 +113,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 13. **Relevance is not truth:** if the expected fact is known, check it directly; a relevance or fluency judge will happily pass a confident, on-topic hallucination.
 14. **Scope a rubric judge to one property:** a judge told to "check consistency" will judge relevance too unless you tell it what to ignore. Name the property, list what to ignore, and give it a pass rule for answers with nothing to check.
 15. **Verify evidence before judging it:** fetch traces back by ID and assert names, arguments, counts, outcomes, and advertised schemas before writing a manifest; a downstream judge can only be trusted if the span underneath it is trusted. (exp 011)
+16. **Keep scorer properties separate and join results by trace ID:** correctness and efficiency answer different questions, and a multi-run comparison must join on `trace_id` (with a scenario tag re-check) rather than row order. Normalize `error`/`missing` separately from `no`. (exp 012)
 
 ---
 
@@ -126,6 +132,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 | Right-city-wrong-fact control, factuality check | [009-factuality-check.md](experiments/009-factuality-check.md) |
 | Self-contradiction rubric judge, no expected facts | [010-self-consistency-judge.md](experiments/010-self-consistency-judge.md) |
 | Tool-call tracing, five verified span patterns | [011-tool-call-tracing.md](experiments/011-tool-call-tracing.md) |
+| Tool-call judges: two correctness modes + efficiency, two repetitions | [012-tool-call-judges.md](experiments/012-tool-call-judges.md) |
 | Register, backlog, decision log | [LAB_BOOK.md](LAB_BOOK.md) |
 
 ## 5. Still open
@@ -133,5 +140,6 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 - Harden the environment: pin dependency versions so the `--no-deps` recipe is reproducible (F-012).
 - Move the known-bad controls from the pilot into the full run and keep them as a standing regression set (F-014); add an LLM `Correctness` check with `expected_facts` for paraphrase robustness and compare it against the deterministic check (deterministic check landed in exp 009, consistency judge in exp 010).
 - Standardize tags across every script (F-010), then use the suite for A/B comparisons (F-014) and monitoring (F-013).
-- Judge the five exp 011 traces from the manifest with correctness and efficiency scorers, comparing ground-truth-free and exact-match modes (exp 012, F-015).
+- Add a legitimate failure-plus-retry control so the efficiency judge can be checked for false positives on recovery (F-015).
+- Promote the exp 011/012 tool-call cases and three verdicts into F-014's standing A/B regression set.
 - Decide on Unity Catalog trace storage and shared vs project-specific experiment paths (F-011, open questions in the lab book).

@@ -1,6 +1,6 @@
 # Live Demo Script: Databricks MLflow 3 GenAI Tracing
 
-**Total Runtime:** ~7 minutes (~9 minutes with optional Act 5B). For a 4-minute cut, run Act 1 and Act 5 only.
+**Total Runtime:** ~7 minutes (~9 minutes with one optional act, ~11 with both). For a 4-minute cut, run Act 1 and Act 5 only.
 
 **Story shape:** show the result first, explain it second, prove it third. Companion deck: `DEMO_DECK.html` (7 slides with real MLflow UI screenshots from the experiment — see `docs/demo/README.md` for provenance). The deck is a visual reference; the terminal and the Databricks Traces tab remain the live screens.
 
@@ -12,12 +12,13 @@
 | 4 | Failure signatures: trace `ERROR` vs span `ERROR` | ~1 min |
 | 5 | Proof: latency/cost + an evaluation run over stored traces | ~2 min |
 | 5B (opt.) | The controls the old suite missed: wrong fact and self-contradiction | ~2.5 min |
+| 5C (opt.) | Tool calls: prove what the agent did, then judge it | ~2.5 min |
 
 ---
 
 ## Pre-Flight Checklist (10 minutes before)
 
-> **One-command check:** `./start_demo.sh --check-only` verifies the venv, Databricks auth, the experiment, the eight evidence traces, and the five registered scorers. `./start_demo.sh` also opens the deck and the Traces tab. The manual steps below are what the launcher automates.
+> **One-command check:** `./start_demo.sh --check-only` verifies the venv, Databricks auth, the experiment, the eight evidence traces, and all eight registered scorers (including the exact tool-call scorer config). `./start_demo.sh` also opens the deck and the Traces tab. The manual steps below are what the launcher automates.
 
 1. **Verify the environment** from `/Users/yourbabes/dev/Databricks/MLFlowTest`:
    ```bash
@@ -31,7 +32,7 @@
    print("scorers:", [s.name for s in mlflow.genai.list_scorers()])
    PY
    ```
-   Expected: experiment `1675992194464286`; scorers `relevance_to_query`, `answers_expected_city`, `response_length`. If the PAT in `~/.databrickscfg` has expired, fix it before the demo — not during.
+   Expected: experiment `1675992194464286`; eight scorers — `relevance_to_query`, `answers_expected_city`, `answers_expected_fact`, `self_consistent`, `response_length`, `tool_call_correctness`, `tool_call_correctness_exact`, `tool_call_efficiency`. If the PAT in `~/.databrickscfg` has expired, fix it before the demo — not during.
 
 2. **Open two browser tabs**:
    - **Tab 0 — Deck:** `open DEMO_DECK.html`
@@ -161,7 +162,7 @@ Expected: `Session ID: lab-f007-…` and three trace IDs (tool error, unhandled 
 > "This is MLflow GenAI evaluation in precomputed mode: I selected traces with a usable answer, excluded the answerless error traces, and scored them without calling the agent again. Two managed LLM judges — `relevance_to_query` and a self-consistency rubric — plus three deterministic checks: does the answer name the city the user asked about, does it state the ground-truth fact, and is it under 300 characters. The pilot runs 3 clean records and 6 planted known-bad controls. Clean sample: 3/3. Controls: 6/6 caught. The means are 0.67, 0.63, 0.67, 0.89, 0.89 — non-uniform by design."
 
 **Land it:**
-> "And I registered all five scorers in the experiment, so this is a repeatable harness, not a one-off script."
+> "And I registered all five output-level scorers in the experiment, so this is a repeatable harness, not a one-off script."
 
 ---
 
@@ -186,9 +187,34 @@ Expected: `Session ID: lab-f007-…` and three trace IDs (tool error, unhandled 
 
 ---
 
+## Act 5C (Optional): Tool Calls — Prove It, Then Judge It (~2.5 min)
+
+**Screen:** Databricks Traces tab filtered by `session_id = lab-f011-…`, then the terminal.
+
+**Action 1 — capture and verify (exp 011):**
+```bash
+.venv/bin/python trace_tool_calls.py
+```
+**Say:**
+> "So far we have only scored what the agent *said*. Now we look at what it *did*. Five cases, the same question about weather and cloud cover in SF, the same two tools advertised every time. Only the scripted model decision changes: one happy call, no call, the wrong tool, the wrong city, and three identical calls. These run through the real LangGraph loop with autolog; I fetch each trace back and assert the tool spans directly — name, arguments, count, and OK outcome. Zero judge calls in this step, and the manifest is written only if all five pass."
+
+**Action 2 — judge the same traces (exp 012):**
+```bash
+.venv/bin/python evaluate_tool_calls.py
+```
+**Say (point at the four run IDs):**
+> "Now three scorer configurations judge those same five traces — twice, with no agent re-run and no `predict_fn`. The exact-match mode accepts only `get_weather(city='SF')`; the other two read the request alone. Three verdicts per case: unaided correctness, efficiency, exact match. Happy is yes / yes / yes. Look at `tool_no_call`: correctness says no, but efficiency says **yes** — doing nothing is perfectly efficient and still wrong, so the two properties have to be separate scorers. Wrong tool, wrong city, and the retry storm are no across the board. The exact-match sequence is yes, no, no, no, no in both repetitions, with zero flips and no scorer errors."
+
+**Honest limits:**
+> "The two correctness modes agreed on all five cases — exact match buys a deterministic, auditable rationale, not a different verdict. These are five unambiguous traces; LLM-judge verdicts on borderline cases can still flip, so two repetitions is a smoke test, not a stability guarantee. Registration does not enable automatic monitoring."
+
+**Troubleshooting:** if `evaluate_tool_calls.py` reports a missing manifest, run `trace_tool_calls.py` first; if it reports a scenario-tag mismatch, the five source traces were overwritten and must be regenerated. Both failures are loud by design — the evaluator never scores a trace it cannot verify.
+
+---
+
 ## Closing (~30 sec)
 
-> "Ten experiments now: keyless tracing, manual spans, multi-turn sessions, failures you can diagnose, latency and cost from the trace metadata, and an evaluation harness that catches planted defects — including a right-city-wrong-fact hallucination and a self-contradiction the old suite missed. The artifact is a repeatable measurement loop — the lab book, the findings doc, and the runnable scripts. The limits are explicit: toy agent, 11 answers, controls only in the pilot so far. Full-run controls and A/B comparisons are the next experiment."
+> "Twelve experiments now: keyless tracing, manual spans, multi-turn sessions, failures you can diagnose, latency and cost from the trace metadata, an evaluation harness that catches planted defects — including a right-city-wrong-fact hallucination and a self-contradiction the old suite missed — and tool-call evidence you can prove and then judge. The artifact is a repeatable measurement loop — the lab book, the findings doc, and the runnable scripts. The limits are explicit: toy agent, 11 answers, controls only in the pilot, and five unambiguous tool traces. Full-run controls, legitimate retries, and A/B comparisons are the next experiments."
 
 Then open Q&A with `DEMO_DECK.html` slide 7 up and the Traces tab still open.
 
@@ -204,5 +230,8 @@ Then open Q&A with `DEMO_DECK.html` slide 7 up and the Traces tab still open.
 | `INVALID_PARAMETER_VALUE` filtering errors | Use `status = 'ERROR'`, not `state = 'ERROR'`. |
 | Evaluation says 0 usable records | The selector needs root-span inputs; generated evaluation traces have none, and the eight evidence traces must still exist. Run `./start_demo.sh --check-only`. |
 | Controls not in the results | Pass `--with-controls`; it is opt-in so the clean full-run numbers stay comparable. |
+| Tool-call evaluator says manifest missing | Run `trace_tool_calls.py` first; `evaluate_tool_calls.py` refuses to score unverified traces. |
+| Tool-call evaluator says scenario-tag mismatch | The five source traces were overwritten; regenerate them with `trace_tool_calls.py`. |
+| Only five scorers listed | Run `python evaluate_tool_calls.py --register` (adds the three tool-call configs; does not enable monitoring). |
 | Trace IDs look shifted | Read `span.trace_id` from the live span, not `get_last_active_trace_id()`. |
 | Post-commit hook noise | Harmless fork warning from the global hook; commits succeed. |

@@ -1,6 +1,6 @@
 # MLFlowTest Demo — GenAI tracing you can prove
 
-About **7 minutes** (~9 with the optional bug-hunt beat). Everything runs from this repo against the Databricks workspace in `~/.databrickscfg`. No external LLM key, no local server.
+About **7 minutes** (~9 with one optional beat, ~11 with both). Everything runs from this repo against the Databricks workspace in `~/.databrickscfg`. No external LLM key, no local server.
 
 **Story shape:** show the result first, explain it second, prove it third. The demo is a sequence of real traces already in `/Shared/my-first-trace`, with two short live runs.
 
@@ -12,10 +12,11 @@ About **7 minutes** (~9 with the optional bug-hunt beat). Everything runs from t
 | 4 | Failure signatures: trace `ERROR` vs span `ERROR` | ~1 min |
 | 5 | Proof: latency/cost + an evaluation run over stored traces | ~2 min |
 | 5B (opt.) | The controls the old suite missed: wrong fact and self-contradiction | ~2.5 min |
+| 5C (opt.) | Tool calls: prove what the agent did, then judge it | ~2.5 min |
 
 ## 1. Set up (before the demo)
 
-One command verifies auth, the experiment, the eight evidence traces, and the scorer suite, then opens the deck and the Databricks experiment:
+One command verifies auth, the experiment, the eight evidence traces, and all eight registered scorers (five output-level, three tool-call), then opens the deck and the Databricks experiment:
 
 ```sh
 ./start_demo.sh                 # preflight + open tabs
@@ -45,4 +46,4 @@ Open **Tab 1** at `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments
 
 See the troubleshooting card at the end of `DEMO_SCRIPT.md`. Most issues are auth (`~/.databrickscfg`), the wrong experiment, or a stale trace ID — the preflight catches all three before you start.
 
-**Honest limit to say out loud:** the clean evaluation scores are 1.0 across 11 short weather answers from one toy agent; the pilot's six planted controls are caught 6/6 — including a right-city-wrong-fact hallucination and a self-contradictory answer that the original three-scorer suite passed — which proves the harness discriminates but not that an agent is production-ready. The lab writeups say the same.
+**Honest limit to say out loud:** the clean evaluation scores are 1.0 across 11 short weather answers from one toy agent; the pilot's six planted controls are caught 6/6 — including a right-city-wrong-fact hallucination and a self-contradictory answer that the original three-scorer suite passed. The tool-call judges agree across two repetitions on five unambiguous cases, and the no-call trace shows efficiency can say `yes` where correctness says `no`. That proves the harness discriminates, not that an agent is production-ready. The lab writeups say the same.
