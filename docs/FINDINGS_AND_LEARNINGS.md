@@ -116,6 +116,9 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 15. **Verify evidence before judging it:** fetch traces back by ID and assert names, arguments, counts, outcomes, and advertised schemas before writing a manifest; a downstream judge can only be trusted if the span underneath it is trusted. (exp 011)
 16. **Keep scorer properties separate and join results by trace ID:** correctness and efficiency answer different questions, and a multi-run comparison must join on `trace_id` (with a scenario tag re-check) rather than row order. Normalize `error`/`missing` separately from `no`. (exp 012)
 17. **Define a regression set by importing, not copying:** the case and scorer lists already lived in the eval scripts, so `regression_suite.py` imports them as the single source of truth and validates the checked-in artifact against the exp-012 verdict baseline. A fourth copy would have drifted silently. (F-014)
+18. **A/B needs variant identity and structured output, not just two `--run` calls:** `--run` re-scores one mixed trace pool, so both arms would be identical, and stdout reports cannot be diffed. Tag each generated trace with `variant`/`model_endpoint`, filter with `evaluate_traces.py --variant`, persist row-level verdicts with `--output`, and diff with `--compare`. (exp 013)
+19. **Don't re-judge arm-independent evidence:** scripted tool cases cannot change with the endpoint/prompt, and re-running their judge overwrote the canonical exp-012 artifact with noise. `--ab` excludes them; keep the frozen evidence untouched. (exp 013)
+20. **Equal scorer verdicts can still hide a real operational difference:** with 0 verdict changes and 6/6 controls caught in both arms, the distinguishing signal was trace metrics — llama-4-maverick was ~13% faster but ~7.5× the cost of gpt-oss-20b. Attach latency/usage/cost to each arm so scorer ties remain actionable. (exp 013)
 
 ---
 
@@ -135,6 +138,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 | Self-contradiction rubric judge, no expected facts | [010-self-consistency-judge.md](experiments/010-self-consistency-judge.md) |
 | Tool-call tracing, five verified span patterns | [011-tool-call-tracing.md](experiments/011-tool-call-tracing.md) |
 | Tool-call judges: two correctness modes + efficiency, two repetitions | [012-tool-call-judges.md](experiments/012-tool-call-judges.md) |
+| Endpoint A/B: variant tags, structured diff, trace metrics | [013-endpoint-ab.md](experiments/013-endpoint-ab.md) |
 | Register, backlog, decision log | [LAB_BOOK.md](LAB_BOOK.md) |
 
 ## 5. Still open
@@ -142,7 +146,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 Ordered by the lab goals set 2026-11-19 — reusable demo, learning breadth, judge trust (see [LAB_BOOK.md](LAB_BOOK.md) §6):
 
 - [x] **(reusable demo, done 2026-11-19)** Standardize tags across every script (F-010): `lab_tags.py` supplies `lab_book`, `scenario`, `env`, `git_sha` to all experiment scripts.
-- [x] **(reusable demo, done 2026-11-19)** Standing A/B regression set (F-014): `regression_suite.py` covers the 6 output controls, 5 tool cases and 3 verdicts by importing the eval scripts' constants; `--validate` checks coverage/baseline offline, `--run LABEL` snapshots a variant, `--compare A B` diffs verdicts. Actual endpoint/prompt A/B runs remain future work.
+- [x] **(reusable demo, done 2026-11-19)** Standing A/B regression set (F-014): `regression_suite.py` covers the 6 output controls, 5 tool cases and 3 verdicts by importing the eval scripts' constants; `--validate` checks coverage/baseline offline, `--run LABEL` re-scores frozen cases, `--ab LABEL [--endpoint/--prompt]` generates + scores a real variant arm, `--compare A B` diffs verdicts. A real endpoint A/B ran in exp 013.
 - [x] **(reusable demo, done 2026-11-19)** Harden the environment: dependency versions are pinned in `requirements.txt` + `requirements.lock.txt`, with `./rebuild_venv.sh` verified on a clean Python 3.15.2 venv (F-012).
 - **(learning breadth)** Explore RAG/retrieval tracing (F-006) or another named autolog integration (F-004) once demo work is done.
 - **(judge trust)** Add a legitimate failure-plus-retry control to check the efficiency judge for false positives on recovery (F-016).

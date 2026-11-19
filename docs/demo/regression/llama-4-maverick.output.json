@@ -1,0 +1,232 @@
+{
+  "variant": "llama-4-maverick",
+  "endpoint": "databricks-llama-4-maverick",
+  "scorers": [
+    "answers_expected_city",
+    "answers_expected_fact",
+    "relevance_to_query",
+    "self_consistent",
+    "response_length"
+  ],
+  "run_id": "d6f3b463c14144a38afef425102c217e",
+  "rows": [
+    {
+      "trace_id": "tr-72afbaf93bf8de56b550a856e9ebf9d3",
+      "scenario": "baseline",
+      "variant": "llama-4-maverick",
+      "control": null,
+      "answer": "The weather in San Francisco is expected to be cloudy.",
+      "scores": {
+        "answers_expected_city": {
+          "value": true,
+          "error": null
+        },
+        "answers_expected_fact": {
+          "value": true,
+          "error": null
+        },
+        "relevance_to_query": {
+          "value": "yes",
+          "error": null
+        },
+        "self_consistent": {
+          "value": "yes",
+          "error": null
+        },
+        "response_length": {
+          "value": "yes",
+          "error": null
+        }
+      }
+    },
+    {
+      "trace_id": "control:wrong_city",
+      "scenario": "control",
+      "variant": null,
+      "control": "wrong_city",
+      "answer": "The current weather in New York City is cloudy.",
+      "scores": {
+        "answers_expected_city": {
+          "value": false,
+          "error": null
+        },
+        "answers_expected_fact": {
+          "value": true,
+          "error": null
+        },
+        "relevance_to_query": {
+          "value": "no",
+          "error": null
+        },
+        "self_consistent": {
+          "value": "yes",
+          "error": null
+        },
+        "response_length": {
+          "value": "yes",
+          "error": null
+        }
+      }
+    },
+    {
+      "trace_id": "control:off_topic",
+      "scenario": "control",
+      "variant": null,
+      "control": "off_topic",
+      "answer": "I can help you write a Python function to sort a list.",
+      "scores": {
+        "answers_expected_city": {
+          "value": false,
+          "error": null
+        },
+        "answers_expected_fact": {
+          "value": false,
+          "error": null
+        },
+        "relevance_to_query": {
+          "value": "no",
+          "error": null
+        },
+        "self_consistent": {
+          "value": "yes",
+          "error": null
+        },
+        "response_length": {
+          "value": "yes",
+          "error": null
+        }
+      }
+    },
+    {
+      "trace_id": "control:over_length",
+      "scenario": "control",
+      "variant": null,
+      "control": "over_length",
+      "answer": "San Francisco weather update: cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; cloudy with a light breeze; ",
+      "scores": {
+        "answers_expected_city": {
+          "value": true,
+          "error": null
+        },
+        "answers_expected_fact": {
+          "value": true,
+          "error": null
+        },
+        "relevance_to_query": {
+          "value": "yes",
+          "error": null
+        },
+        "self_consistent": {
+          "value": "yes",
+          "error": null
+        },
+        "response_length": {
+          "value": "no",
+          "error": null
+        }
+      }
+    },
+    {
+      "trace_id": "control:refusal",
+      "scenario": "control",
+      "variant": null,
+      "control": "refusal",
+      "answer": "I'm sorry, but I can't help with weather questions.",
+      "scores": {
+        "answers_expected_city": {
+          "value": false,
+          "error": null
+        },
+        "answers_expected_fact": {
+          "value": false,
+          "error": null
+        },
+        "relevance_to_query": {
+          "value": "no",
+          "error": null
+        },
+        "self_consistent": {
+          "value": "yes",
+          "error": null
+        },
+        "response_length": {
+          "value": "yes",
+          "error": null
+        }
+      }
+    },
+    {
+      "trace_id": "control:right_city_wrong_fact",
+      "scenario": "control",
+      "variant": null,
+      "control": "right_city_wrong_fact",
+      "answer": "The weather in San Francisco is sunny and 75F with clear skies.",
+      "scores": {
+        "answers_expected_city": {
+          "value": true,
+          "error": null
+        },
+        "answers_expected_fact": {
+          "value": false,
+          "error": null
+        },
+        "relevance_to_query": {
+          "value": "yes",
+          "error": null
+        },
+        "self_consistent": {
+          "value": "yes",
+          "error": null
+        },
+        "response_length": {
+          "value": "yes",
+          "error": null
+        }
+      }
+    },
+    {
+      "trace_id": "control:self_contradiction",
+      "scenario": "control",
+      "variant": null,
+      "control": "self_contradiction",
+      "answer": "It might be cloudy in San Francisco, but it's also sunny, 95F, and clear.",
+      "scores": {
+        "answers_expected_city": {
+          "value": true,
+          "error": null
+        },
+        "answers_expected_fact": {
+          "value": true,
+          "error": null
+        },
+        "relevance_to_query": {
+          "value": "yes",
+          "error": null
+        },
+        "self_consistent": {
+          "value": "no",
+          "error": null
+        },
+        "response_length": {
+          "value": "yes",
+          "error": null
+        }
+      }
+    }
+  ],
+  "trace_metrics": {
+    "trace_id": "tr-72afbaf93bf8de56b550a856e9ebf9d3",
+    "execution_time_ms": 2041,
+    "token_usage": {
+      "input_tokens": 856,
+      "output_tokens": 20,
+      "total_tokens": 876,
+      "cache_read_input_tokens": 0
+    },
+    "cost": {
+      "input_cost": 0.00042800855999999994,
+      "output_cost": 3.0000600000000002e-05,
+      "total_cost": 0.00045800915999999996
+    }
+  }
+}

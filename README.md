@@ -62,13 +62,24 @@ python evaluate_traces.py        # full GenAI evaluation over persisted traces
 ```bash
 python regression_suite.py --summary    # the 6 output controls + 5 tool cases + 3 verdicts
 python regression_suite.py              # offline: check artifacts cover the set and match baseline
-python regression_suite.py --run baseline        # re-run both evaluators; snapshot results (judge calls)
-# change prompt/model, then:
-python regression_suite.py --run variant_b
-python regression_suite.py --compare docs/demo/regression/baseline.json docs/demo/regression/variant_b.json
+python regression_suite.py --run baseline        # re-score the frozen scripted cases (judge calls)
 ```
 
-The case lists come from `evaluate_traces.py` and `evaluate_tool_calls.py`, so the suite has no duplicate copy to drift. `--validate` fails if coverage or the exp-012 verdict baseline changes; use `--compare` to inspect intended A/B differences.
+The case lists come from `evaluate_traces.py` and `evaluate_tool_calls.py`, so the suite has no duplicate copy to drift. `--validate` fails if coverage or the exp-012 verdict baseline changes.
+
+#### Real endpoint/prompt A/B (exp 013)
+
+`--run` re-scores the same stored traces, so it cannot compare endpoints or prompts. Use `--ab` to generate a freshly tagged trace for each arm, score it with the 6 standing controls, and snapshot structured results + trace metrics:
+
+```bash
+python regression_suite.py --ab gpt-oss-20b --endpoint databricks-gpt-oss-20b
+python regression_suite.py --ab llama-4-maverick --endpoint databricks-llama-4-maverick
+python regression_suite.py --compare \
+  docs/demo/regression/gpt-oss-20b.output.json \
+  docs/demo/regression/llama-4-maverick.output.json
+```
+
+`--ab` also accepts `--prompt "..."` to hold the endpoint fixed and vary the message. Each generated trace carries `variant` and `model_endpoint` tags, and `evaluate_traces.py --variant` isolates that arm so untagged evaluation traces do not leak into the score. The five scripted tool cases are arm-independent and are deliberately not re-judged. The worked example and results are in [exp 013](docs/experiments/013-endpoint-ab.md).
 
 ## Notes
 

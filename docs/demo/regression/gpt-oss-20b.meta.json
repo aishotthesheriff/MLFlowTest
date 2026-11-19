@@ -1,0 +1,9 @@
+{
+  "label": "gpt-oss-20b",
+  "endpoint": "databricks-gpt-oss-20b",
+  "prompt": null,
+  "trace_id": "tr-e96d66aa28e03574a1d499b46c6f9036",
+  "git_sha": "48110d5",
+  "output_snapshot": "docs/demo/regression/gpt-oss-20b.output.json",
+  "tool_cases": "arm-independent (scripted traces; see exp 012 evidence)"
+}

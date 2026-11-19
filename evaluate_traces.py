@@ -22,9 +22,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import sys
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -152,11 +154,18 @@ def build_scorers():
     ]
 
 
-def records_from_traces(traces):
-    """Return (records, metas) aligned by index; metas hold evidence for reporting."""
+def records_from_traces(traces, variant=None):
+    """Return (records, metas) aligned by index; metas hold evidence for reporting.
+
+    ``variant`` restricts scoring to traces created for one A/B arm. Untagged
+    traces (including the untagged root_span records evaluation itself adds)
+    are excluded when a variant is given.
+    """
     records, metas = [], []
     for trace in traces:
         tags = trace.info.tags or {}
+        if variant is not None and tags.get("variant") != variant:
+            continue
         scenario = tags.get("scenario") or "baseline"
         if scenario in EXCLUDED_SCENARIOS:
             continue
@@ -207,6 +216,7 @@ def records_from_traces(traces):
         metas.append({
             "trace_id": trace.info.trace_id,
             "scenario": scenario,
+            "variant": tags.get("variant"),
             "turn": turn,
             "expected_city": expected_city,
             "expected_fact": expected_fact,
@@ -347,6 +357,60 @@ def report(result, metas, indices, label):
                 print(f"      {name}: {', '.join(controls)}")
 
 
+def _json_value(value):
+    """Convert a pandas/numpy cell into a JSON-safe scalar."""
+    if value is None:
+        return None
+    try:
+        import pandas as pd
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if isinstance(value, (bool, int, float, str)):
+        return value
+    item = getattr(value, "item", None)
+    if callable(item):
+        try:
+            return item()
+        except (TypeError, ValueError):
+            pass
+    return str(value)
+
+
+def write_artifact(path, result, metas, indices, variant, endpoint):
+    """Persist row-level verdicts so regression_suite --compare can diff arms."""
+    df = result.result_df
+    if df is None:
+        raise RuntimeError("evaluation returned no result_df; cannot write artifact")
+    rows = []
+    for row_i, result_i in enumerate(indices):
+        meta = metas[result_i]
+        scores = {}
+        for name in SCORER_NAMES:
+            scores[name] = {
+                "value": _json_value(df.iloc[row_i].get(name + "/value")),
+                "error": _json_value(df.iloc[row_i].get(name + "/error_message")),
+            }
+        rows.append({
+            "trace_id": meta["trace_id"],
+            "scenario": meta.get("scenario"),
+            "variant": meta.get("variant"),
+            "control": meta.get("control"),
+            "answer": meta.get("answer"),
+            "scores": scores,
+        })
+    doc = {
+        "variant": variant,
+        "endpoint": endpoint,
+        "scorers": list(SCORER_NAMES),
+        "run_id": result.run_id,
+        "rows": rows,
+    }
+    Path(path).write_text(json.dumps(doc, indent=2) + "\n")
+    return doc
+
+
 def main() -> int:
     load_dotenv()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -354,12 +418,16 @@ def main() -> int:
     parser.add_argument("--register", action="store_true", help="Register the scorer suite in the experiment.")
     parser.add_argument("--with-controls", action="store_true",
                         help="Append planted known-bad records to prove non-uniform scoring.")
+    parser.add_argument("--variant", help="Only score traces tagged with this A/B arm label.")
+    parser.add_argument("--output", help="Write row-level verdicts to this JSON path.")
+    parser.add_argument("--endpoint", help="Endpoint label recorded in --output artifact.")
     args = parser.parse_args()
 
     import mlflow
 
     mlflow.set_tracking_uri("databricks")
     experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "/Shared/my-first-trace")
+    endpoint = args.endpoint or os.getenv("DATABRICKS_MODEL_ENDPOINT", "databricks-gpt-oss-20b")
     experiment = mlflow.get_experiment_by_name(experiment_name)
     if not experiment:
         print(f"Experiment not found: {experiment_name}", file=sys.stderr)
@@ -380,13 +448,15 @@ def main() -> int:
             return 0
 
     traces = mlflow.search_traces(locations=[exp_id], max_results=1000, return_type="list")
-    records, metas = records_from_traces(traces)
+    records, metas = records_from_traces(traces, variant=args.variant)
     usable_trace_records = len(records)
     if args.with_controls:
         control_data, control_metas = build_controls()
         records += control_data
         metas += control_metas
     print(f"Experiment: {experiment_name} ({exp_id})")
+    if args.variant:
+        print(f"Variant filter: {args.variant}")
     print(f"Traces found: {len(traces)}; usable trace records: {usable_trace_records}; "
           f"excluded scenarios: {sorted(EXCLUDED_SCENARIOS)}")
     if args.with_controls:
@@ -411,6 +481,9 @@ def main() -> int:
         label += " + known-bad controls"
     result = mlflow.genai.evaluate(data=data, scorers=scorers)
     report(result, metas, indices, label)
+    if args.output:
+        write_artifact(args.output, result, metas, indices, args.variant, endpoint)
+        print(f"\nWrote row-level artifact: {args.output}")
     print("\nNote: result.passed also inspects expectation value columns, so scorer-only counts above are authoritative.")
     return 0
 

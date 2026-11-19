@@ -1,0 +1,9 @@
+{
+  "label": "llama-4-maverick",
+  "endpoint": "databricks-llama-4-maverick",
+  "prompt": null,
+  "trace_id": "tr-72afbaf93bf8de56b550a856e9ebf9d3",
+  "git_sha": "48110d5",
+  "output_snapshot": "docs/demo/regression/llama-4-maverick.output.json",
+  "tool_cases": "arm-independent (scripted traces; see exp 012 evidence)"
+}
