@@ -1,8 +1,8 @@
 # Fixes, Findings & Learnings
 
-A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It collects the bugs we hit, the fixes that worked, the platform behaviors we confirmed, and the patterns we adopted across experiments 001-007. Source writeups live in [`docs/experiments/`](experiments/); the run log lives in [`docs/LAB_BOOK.md`](LAB_BOOK.md).
+A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It collects the bugs we hit, the fixes that worked, the platform behaviors we confirmed, and the patterns we adopted across experiments 001-008. Source writeups live in [`docs/experiments/`](experiments/); the run log lives in [`docs/LAB_BOOK.md`](LAB_BOOK.md).
 
-**Last updated:** 2026-11-18 · **Workspace:** `/Users/yourbabes/dev/Databricks/MLFlowTest` · **Experiment:** `/Shared/my-first-trace` (`1675992194464286`)
+**Last updated:** 2026-11-19 · **Workspace:** `/Users/yourbabes/dev/Databricks/MLFlowTest` · **Experiment:** `/Shared/my-first-trace` (`1675992194464286`)
 
 **Second brain copy:** the same material is ingested into the ObsidiBin vault as `~/dev/VAULT/ObsidiBin/raw/notes/2026-11-18-mlflow-genai-tracing-findings.md`, with wiki summaries `MLFlowTest GenAI Tracing Lab` and `MLflow GenAI Tracing Learnings`. This repo file remains the canonical source; if they diverge, update the raw vault note to match.
 
@@ -20,7 +20,8 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 | `mlflow.search_traces` filter returned nothing / needed an experiment | Filtering requires an active experiment or explicit location | Pass `locations=[experiment_id]` | [004](experiments/004-multi-turn-tracing.md) |
 | `state = 'ERROR'` filter → `INVALID_PARAMETER_VALUE` | Valid filter column is `status`, not `state` | Use `status = 'ERROR'` (combine with `AND tags...`) | [005](experiments/005-error-tracing.md) |
 | Tool-error case returned a normal answer with no tool span | Tool description said "deliberately broken"; the model refused to call it | Give the failing tool a normal name/description and explicitly require its use in the prompt | [005](experiments/005-error-tracing.md) |
-| Custom city scorer returned `False` for correct answers | Model emits U+202F in "San Francisco" and `sf.` at sentence end | `re.sub(r"\s+", " ", text)` + word-boundary regex `\bsf\b` | [007](experiments/007-genai-evaluation.md) |
+| Custom city scorer returned `False` for correct answers | Model emits U+202F in "San Francisco" and `sf.` at sentence end | `re.sub(r"\s+", " ", text)` + word-boundary regex `\bsf\b` | [007](experiments/007-genai-evaluation.md) |
+| Correct answer "New York City" scored `False` for expected "NYC" | Model expands the abbreviation; literal token match misses it | Alias map (`nyc` → "new york city") with whole-word matching | [008](experiments/008-scorer-controls.md) |
 | `result.passed` was `False` despite every scorer passing | `expectations` become `<key>/value` columns; `result.passed` inspects all of them | Count verdicts from real scorer columns only; report errors/unscored separately | [007](experiments/007-genai-evaluation.md) |
 | Baseline root outputs were a string in some traces | Root span output shape varies by run/version | Guard with `isinstance(root.outputs, dict)` before `.get("messages")` | [007](experiments/007-genai-evaluation.md) |
 
@@ -40,7 +41,8 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 - **Error-injection tools must look legitimate.** The model refused a tool described as "deliberately broken," so no tool-error span was produced. Renaming it to `get_weather` and forcing tool use in the prompt produced the intended `RuntimeError` path. (exp 005)
 
 ### 1.3 Evaluation script
-- **Unicode/normalization bug in the custom scorer.** Correct answers were scored `False` because the model emits "San Francisco" with U+202F and "sf." with trailing punctuation. Fixed with whitespace normalization and `\bsf\b`. Validated with known-good and known-bad answers before re-running the pilot. (exp 007)
+- **Unicode/normalization bug in the custom scorer.** Correct answers were scored `False` because the model emits "San Francisco" with U+202F and "sf." with trailing punctuation. Fixed with whitespace normalization and `\bsf\b`. Validated with known-good and known-bad answers before re-running the pilot. (exp 007)
+- **City alias false negative.** "NYC" was scored `False` when the model wrote "New York City". Added an alias map (`nyc` → "nyc"/"new york city"/"new york", `san francisco` → "san francisco"/"sf") with whole-word matching. (exp 008)
 - **Ground-truth columns pollute `result.passed`.** `expectations` are surfaced as `expected_city/value`, which MLflow's `passed` property treats as a scorer verdict and rejects as non-boolean. The script now counts only the three real scorers and reports unscored/errored explicitly. (exp 007)
 - **Defensive output parsing.** Baseline root spans sometimes hold a string rather than a dict; added an `isinstance` guard. (exp 007)
 
@@ -67,6 +69,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 - On Databricks tracking, `RelevanceToQuery()` defaults to the managed `databricks` judge — verified with a real direct call before the pilot. No external key. (exp 007)
 - Scorers can be registered and listed in the experiment (`mlflow.genai.list_scorers()`): `relevance_to_query`, `answers_expected_city`, `response_length`. (exp 007)
 - All 11 records scored with valid values, rationales, and no errors; means all 1.0. The uniform scores reflect a small known-good sample — direct negative tests proved the custom scorer can return `False`, so this is not a broken scorer, but it is not production-quality evidence. (exp 007)
+- **Planted controls prove discrimination.** Four known-bad records (wrong city, off-topic, over-length, refusal) were caught 4/4; the clean pilot stayed 3/3 green and the means became non-uniform (0.57/0.57/0.86). A high mean alone is not evidence. (exp 008)
 - Precomputed mode stores row-level results in the evaluation run, **not** on the original traces (their `assessments` list stays empty). Each evaluation run also adds new traces to the experiment. (exp 007)
 
 ---
@@ -84,6 +87,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 9. **Segment before aggregating:** scenario and status splits prevent fast-failing error traces from distorting latency/cost summaries.
 10. **Reuse the harness:** `analyze_trace_metrics.py` and `evaluate_traces.py` are the standing measurement tools for later A/B and monitoring work.
 11. **Small samples limit claims:** all lab answers are short weather replies from one toy agent; 11/11 passes demonstrate the pipeline works, not that the agent is production-ready.
+12. **Plant known-bad controls:** a clean 1.0 means nothing without a demonstrated catch rate; add controls to the harness and report clean vs. control rows separately.
 
 ---
 
@@ -98,11 +102,12 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 | Error signatures and `status` filtering | [005-error-tracing.md](experiments/005-error-tracing.md) |
 | Latency/token/cost findings | [006-latency-cost-analysis.md](experiments/006-latency-cost-analysis.md) |
 | Evaluation scorers, pilot fixes, results | [007-genai-evaluation.md](experiments/007-genai-evaluation.md) |
+| Known-bad controls, alias fix | [008-scorer-controls.md](experiments/008-scorer-controls.md) |
 | Register, backlog, decision log | [LAB_BOOK.md](LAB_BOOK.md) |
 
 ## 5. Still open
 
 - Harden the environment: pin dependency versions so the `--no-deps` recipe is reproducible (F-012).
-- Add known-bad cases to the evaluation harness to prove non-uniform scoring in a full run (F-014).
+- Move the known-bad controls from the pilot into the full run and keep them as a standing regression set (F-014); add a factuality check for right-city-wrong-fact answers.
 - Standardize tags across every script (F-010), then use the suite for A/B comparisons (F-014) and monitoring (F-013).
 - Decide on Unity Catalog trace storage and shared vs project-specific experiment paths (F-011, open questions in the lab book).

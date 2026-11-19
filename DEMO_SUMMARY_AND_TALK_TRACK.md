@@ -6,7 +6,7 @@
 
 ## 1. Executive Summary
 
-We built a small lab that turns an agent's execution into **queryable evidence in Databricks**, then measures and scores that evidence — with no external LLM key and no separate observability vendor. Seven experiments (001–007) produced a repeatable loop: trace → inspect → measure → evaluate → document.
+We built a small lab that turns an agent's execution into **queryable evidence in Databricks**, then measures and scores that evidence — with no external LLM key and no separate observability vendor. Eight experiments (001–008) produced a repeatable loop: trace → inspect → measure → evaluate → document.
 
 **What the trace shows:** a LangGraph weather agent on `databricks-gpt-oss-20b` via `ChatDatabricks`. Autolog captures the model and tool calls; manual `@mlflow.trace` spans capture our own pre/post-processing inside the same waterfall (7 spans → 10). Multi-turn runs become three traces under one `session_id`, so each turn keeps clean I/O while the conversation stays retrievable — turn 3 recalled the first city from history with no tool call.
 
@@ -14,9 +14,9 @@ We built a small lab that turns an agent's execution into **queryable evidence i
 
 **What the numbers show:** latency, tokens and cost are first-class `TraceInfo` fields — no re-run needed. Slowest of 17 original traces: 4,304 ms, ~100% model time. Most expensive: $0.000121, a multi-turn run. Answerless error traces legitimately have `null` usage and distort mixed aggregates, so the lab segments by scenario and status.
 
-**What the evaluation shows:** precomputed GenAI evaluation over 11 usable traces — one managed Databricks LLM judge (`relevance_to_query`) plus two deterministic scorers (`answers_expected_city`, `response_length`). All 11 records scored, 0 unscored, 0 errored, all means 1.0. A pilot caught two real scorer bugs (U+202F in "San Francisco", `sf.` tokenization) and a misleading `result.passed`; known-bad tests prove the scorer still returns `False`.
+**What the evaluation shows:** precomputed GenAI evaluation over 11 usable traces — one managed Databricks LLM judge (`relevance_to_query`) plus two deterministic scorers (`answers_expected_city`, `response_length`). All 11 records scored, 0 unscored, 0 errored. A later pilot caught a real false negative ("New York City" for expected "NYC"), fixed with an alias map, and appended four planted known-bad controls: clean 3/3, controls 4/4 caught, non-uniform means (0.57 / 0.57 / 0.86). A high mean is not evidence; a caught control is.
 
-**Honest limit:** 11 short weather answers from one toy agent prove the pipeline works, not production quality. There is no known-bad set in the full evaluation run yet.
+**Honest limit:** 11 short weather answers from one toy agent prove the pipeline works, not production quality. The planted controls run in the pilot (4/4 caught); full-run controls and A/B comparisons are next.
 
 ### Key evidence (all verified 2026-11-18)
 
@@ -28,6 +28,7 @@ We built a small lab that turns an agent's execution into **queryable evidence i
 | Multi-turn session | `lab-f005-1795028845` (3 traces; turn 3 = `tr-6f99921de8fc0c0f8f0271392f7bb606`) |
 | Error session | `lab-f007-1795033547` (handled case `tr-193c937a2ab7790e06969f4bb3730a85`) |
 | Evaluation run | `345d6069efe64933a8d04e350a264381` (11 records × 3 scorers) |
+| Controls run | `a4809bf5e16a42fcaca5ed77f2d38120` (3 clean + 4 controls; 4/4 caught) |
 | Findings doc | `docs/FINDINGS_AND_LEARNINGS.md` (+ ObsidiBin vault copy) |
 
 ---
@@ -56,14 +57,14 @@ We built a small lab that turns an agent's execution into **queryable evidence i
 > "For failures: an unhandled error marks the trace `ERROR` and keeps the exception details; a handled error marks only its child span `ERROR` and leaves the trace `OK`. I even had to make the failing tool look legitimate — the model refused to call one labelled 'deliberately broken', so no trace appeared."
 
 ### Proof — Measure and Score (60 sec)
-*(Terminal: `analyze_trace_metrics.py`, then `evaluate_traces.py --pilot`.)*
+*(Terminal: `analyze_trace_metrics.py`, then `evaluate_traces.py --pilot --with-controls`.)*
 
 > "Latency, tokens and cost come straight from trace metadata. Slowest trace: 4.3 seconds, almost all model time. Most expensive: $0.000121. Answerless error traces have null usage, so I segment before aggregating."
 >
-> "Then evaluation over stored traces — no agent re-run. Eleven usable records, one managed LLM judge plus two deterministic checks, all scored, none errored. The scorers are registered in the experiment, so this is a harness, not a one-off."
+> "Then evaluation over stored traces — no agent re-run. One managed LLM judge plus two deterministic checks. The clean pilot is 3/3; then I append four planted known-bad controls — wrong city, off-topic, over-length, refusal — and the harness catches 4/4. The means drop to 0.57 / 0.57 / 0.86, which is the point: a high mean is not evidence."
 
 ### Close — The Honest Limit (20 sec)
-> "A pilot caught two real bugs in a scorer that looked fine — a narrow no-break space and a trailing period — and known-bad tests prove it can still fail. So 11/11 means the pipeline works, not that the agent is production-ready. The next experiment adds known-bad cases and A/B comparisons."
+> "The pilot caught a real false negative — 'New York City' scored wrong for expected 'NYC' — and planted controls are caught 4/4, so the scorer discriminates. But 11 short answers still mean the pipeline works, not that the agent is production-ready. Next: full-run controls and A/B comparisons."
 
 ---
 
@@ -78,7 +79,7 @@ We built a small lab that turns an agent's execution into **queryable evidence i
 .venv/bin/python trace_multi_turn.py      # Act 3: session + 3 turns
 .venv/bin/python trace_errors.py          # Act 4: failure signatures
 .venv/bin/python analyze_trace_metrics.py # Act 5: latency / tokens / cost
-.venv/bin/python evaluate_traces.py --pilot   # Act 5: 3-record scorer pilot
+.venv/bin/python evaluate_traces.py --pilot --with-controls   # Act 5: 3 clean + 4 controls
 .venv/bin/python evaluate_traces.py       # Act 5: full 11-record evaluation
 open DEMO_DECK.html                        # companion deck
 ```
@@ -86,4 +87,5 @@ open DEMO_DECK.html                        # companion deck
 - **Companion deck:** `DEMO_DECK.html` — `→` next, `N` speaker notes, `F` full screen
 - **Databricks experiment:** `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments/1675992194464286`
 - **Evaluation run:** `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments/1675992194464286/evaluation-runs?selectedRunUuid=345d6069efe64933a8d04e350a264381`
+- **Controls run:** `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments/1675992194464286/evaluation-runs?selectedRunUuid=a4809bf5e16a42fcaca5ed77f2d38120`
 - **Full writeups:** `docs/LAB_BOOK.md`, `docs/experiments/001`–`007`, `docs/FINDINGS_AND_LEARNINGS.md`

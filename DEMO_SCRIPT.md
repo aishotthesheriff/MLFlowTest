@@ -11,7 +11,7 @@
 | 3 | Multi-turn: three traces, one session, cross-turn recall | ~1.5 min |
 | 4 | Failure signatures: trace `ERROR` vs span `ERROR` | ~1 min |
 | 5 | Proof: latency/cost + an evaluation run over stored traces | ~2 min |
-| 5B (opt.) | A deterministic scorer caught a bug in a "perfect" run | ~1.5 min |
+| 5B (opt.) | Known-bad controls: planted defects the harness catches | ~1.5 min |
 
 ---
 
@@ -152,37 +152,40 @@ Expected: `Session ID: lab-f007-…` and three trace IDs (tool error, unhandled 
 **Important qualifier:**
 > "Six error-tracing traces had no completed model call, so they have `null` usage, `null` cost and very short latency. Mixed together they dragged the mean down and made the median meaningless. Segment by scenario and status before you compare anything."
 
-**Action 2 — score:**
+**Action 2 — score (clean sample + planted controls):**
 ```bash
-.venv/bin/python evaluate_traces.py --pilot     # 3 representative records, fast
-.venv/bin/python evaluate_traces.py              # full: 11 records x 3 scorers
+.venv/bin/python evaluate_traces.py --pilot --with-controls   # 3 clean + 4 planted controls, fast
+.venv/bin/python evaluate_traces.py                          # full: 11 records x 3 scorers
 ```
 **Say (point at the run URL):**
-> "This is MLflow GenAI evaluation in precomputed mode: I selected 11 traces with a usable answer out of the original 17, excluded the six answerless error traces, and scored them without calling the agent again. One LLM judge — `relevance_to_query`, running the managed Databricks judge — plus two deterministic checks: does the answer name the city the user asked about, and is it under 300 characters. All 11 records scored, none unscored, none errored, all means 1.0."
+> "This is MLflow GenAI evaluation in precomputed mode: I selected traces with a usable answer, excluded the answerless error traces, and scored them without calling the agent again. One LLM judge — `relevance_to_query`, running the managed Databricks judge — plus two deterministic checks: does the answer name the city the user asked about, and is it under 300 characters. The pilot runs 3 clean records and 4 planted known-bad controls. Clean sample: 3/3. Controls: 4/4 caught. The means are 0.57, 0.57, 0.86 — non-uniform by design."
 
 **Land it:**
 > "And I registered all three scorers in the experiment, so this is a repeatable harness, not a one-off script."
 
 ---
 
-## Act 5B (Optional): The Bug Inside a "Perfect" Run (~1.5 min)
+## Act 5B (Optional): Known-Bad Controls — Prove the Scorer Discriminates (~1.5 min)
 
-**Screen:** Deck slide 6, then the terminal/pilot evidence.
+**Screen:** Deck slide 6, then the terminal/pilot evidence from `--with-controls`.
 
 **Say:**
-> "A 1.0 mean is not evidence by itself. My first pilot had a scorer that returned `False` for correct answers — twice."
+> "A 1.0 mean is not evidence by itself. So I planted four known-bad records: wrong city, off-topic, over-length, and a refusal."
 
-**Point at the two failures:**
-> "Correct answers used a narrow no-break space in 'San Francisco' and a period after 'sf.' — both defeated naive text matching. I fixed it with whitespace normalization and a word-boundary regex. And MLflow's `result.passed` reported failure because the ground-truth column looks like a scorer verdict to it, so I count only real scorer columns."
+**Point at the output:**
+> "Clean sample: 3/3. Controls: 4/4 caught. Wrong city and off-topic fail the city check and the judge; over-length fails the length check; the refusal fails the city check and the judge. The aggregate means drop to 0.57, 0.57, 0.86 — that is the point: a high mean is not evidence, a caught control is."
 
-**Then the proof that it discriminates:**
-> "I tested the fixed scorer on a wrong city and an off-topic answer. It returns `False`. So the clean 11/11 is a known-good sample, not a dead scorer — and I'll be the first to say it is not a quality claim about a production agent."
+**Then the live alias bug:**
+> "The same pilot caught a real false negative: the model wrote 'New York City' for expected 'NYC' and the literal matcher returned `False`. I fixed it with an alias map and whole-word matching. Same lesson as the earlier U+202F and 'sf.' bugs: deterministic scorers need normalization and aliases, not just a substring check."
+
+**Honest blind spot:**
+> "A plausible hallucination that names the right city with a wrong fact would still pass. That needs a factuality check or human labels — the next experiment."
 
 ---
 
 ## Closing (~30 sec)
 
-> "Seven experiments in one afternoon: keyless tracing, manual spans, multi-turn sessions, failures you can diagnose, latency and cost from the trace metadata, and an evaluation harness over stored traces. The artifact is a repeatable measurement loop — the lab book, the findings doc, and three runnable scripts. The limits are explicit: toy agent, 11 answers, no known-bad set in the full run yet. That is the next experiment."
+> "Eight experiments now: keyless tracing, manual spans, multi-turn sessions, failures you can diagnose, latency and cost from the trace metadata, and an evaluation harness that catches planted defects. The artifact is a repeatable measurement loop — the lab book, the findings doc, and the runnable scripts. The limits are explicit: toy agent, 11 answers, controls only in the pilot so far. Full-run controls and A/B comparisons are the next experiment."
 
 Then open Q&A with `DEMO_DECK.html` slide 7 up and the Traces tab still open.
 
@@ -197,5 +200,6 @@ Then open Q&A with `DEMO_DECK.html` slide 7 up and the Traces tab still open.
 | No traces in the UI | Run `mlflow.flush_trace_async_logging()` (all scripts do) and check you are in the right experiment. |
 | `INVALID_PARAMETER_VALUE` filtering errors | Use `status = 'ERROR'`, not `state = 'ERROR'`. |
 | Evaluation says 0 usable records | The selector needs root-span inputs; generated evaluation traces have none, and the eight evidence traces must still exist. Run `./start_demo.sh --check-only`. |
+| Controls not in the results | Pass `--with-controls`; it is opt-in so the clean full-run numbers stay comparable. |
 | Trace IDs look shifted | Read `span.trace_id` from the live span, not `get_last_active_trace_id()`. |
 | Post-commit hook noise | Harmless fork warning from the global hook; commits succeed. |

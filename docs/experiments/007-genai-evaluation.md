@@ -65,6 +65,7 @@
 - **Gotchas recorded:**
   - Model output contains U+202F (narrow no-break space) in "San Francisco" — naive substring checks fail; normalize with `re.sub(r"\s+", " ", ...)`.
   - `sf.` at end of a sentence defeats `"sf" in text.split()` — use word-boundary regex `\bsf\b`.
+  - "NYC" is expanded to "New York City" in the answer, so a literal `"nyc"` check is a false negative — use an alias map (fixed in [exp 008](008-scorer-controls.md)).
   - `expectations` become `<key>/value` columns in the result table; MLflow's `result.passed` inspects all such columns and can report `False` because a ground-truth string is not a yes/no rating. The script counts only real scorer verdicts.
   - Each evaluation run adds new traces to the experiment (17 → 23 across pilot/retry/full runs); the record selector still finds exactly 11 usable ones because generated traces lack usable root inputs.
 - **Comparison to prior experiments:** exps 001-006 established tracing and measurement; exp 007 adds the first automated quality signal over those traces.
@@ -74,9 +75,10 @@
 - A mix of one LLM judge (semantic relevance) and deterministic checks (expected city, length) gives complementary evidence; deterministic checks are cheaper and caught real text-normalization bugs.
 - Validate custom scorers on known-bad inputs and inspect row-level values/rationales/errors — a successful run and 1.0 mean are not sufficient on their own.
 - Segment by scenario/status before evaluation: error traces have no final answer and must be excluded or handled by a separate criterion.
+- A uniform 1.0 needs planted known-bad controls to mean anything; [exp 008](008-scorer-controls.md) adds them (clean 3/3, controls 4/4 caught) and shows non-uniform means.
 
 ## 7. Next actions
-- [ ] Add a known-bad case set (wrong city, refusal, off-topic) to prove non-uniform scoring in the full harness (F-014).
+- [x] Add a known-bad case set (wrong city, refusal, off-topic) to prove non-uniform scoring in the full harness (F-014). → completed in [experiment 008](008-scorer-controls.md).
 - [ ] Use this suite as the measurement harness for prompt/model A/B comparisons (F-014).
 - [ ] Consider human-labeled examples and judge alignment before trusting subjective scores (F-009 follow-up).
 - [ ] Feed `status = 'ERROR'` traces into a separate error-quality evaluation (F-013).

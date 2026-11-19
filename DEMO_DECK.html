@@ -207,13 +207,13 @@
         <p class="small">~100% model time (2,742 + 1,530 ms); graph/tool overhead ~4 ms.</p>
       </div>
       <div class="card">
-        <div class="big">11 × 3</div><div class="label">records × scorers</div>
-        <p class="small">Managed Databricks judge + 2 deterministic checks; 0 unscored, 0 errored.</p>
+        <div class="big">3 + 4</div><div class="label">clean records + planted controls</div>
+        <p class="small">3/3 clean pass every scorer; 4/4 controls caught; full run: 11 × 3, 0 unscored, 0 errored.</p>
       </div>
     </div>
   </div>
-  <div class="callout" style="margin-top:14px">A pilot caught two real scorer bugs (U+202F in "San Francisco", <code>sf.</code> tokenization). Known-bad tests still return <code>False</code> — the 1.0 means are a known-good sample, not dead scorers.</div>
-  <aside class="notes">Latency, tokens and cost are first-class TraceInfo fields. Answerless error traces have null usage and drag mixed aggregates. The three scorers are registered in the experiment — this is a harness, not a one-off. This is the slide for Act 5B.</aside>
+  <div class="callout" style="margin-top:14px">A live run scored "New York City" as <code>False</code> for expected "NYC" — fixed with an alias map. Planted known-bad controls (wrong city, off-topic, over-length, refusal) are caught <b>4/4</b>, so a clean 1.0 is a known-good sample, not a dead scorer.</div>
+  <aside class="notes">Latency, tokens and cost are first-class TraceInfo fields. Answerless error traces have null usage and drag mixed aggregates. The three scorers are registered in the experiment — this is a harness, not a one-off. Run <code>evaluate_traces.py --pilot --with-controls</code> for this slide: the clean rows stay green and every planted control is flagged.</aside>
 </section>
 
 <!-- 7. CLOSE -->
@@ -222,11 +222,11 @@
   <h2>The pipeline is the achievement.<br>The limits are the next experiment.</h2>
   <ul class="muted">
     <li>Repeatable loop: trace → inspect → measure → evaluate → document.</li>
-    <li>11 short weather answers from one toy agent prove the pipeline works, not production quality.</li>
-    <li>Next: known-bad sets + A/B comparisons (F-014), tag conventions (F-010), monitoring (F-013).</li>
+    <li>11 short weather answers from one toy agent — plus 4 planted controls — prove the pipeline works, not production quality.</li>
+    <li>Next: full-run controls + A/B comparisons (F-014), tag conventions (F-010), monitoring (F-013).</li>
   </ul>
   <div class="grow"></div>
-  <div class="callout">Writeups: <code>docs/LAB_BOOK.md</code> · <code>docs/experiments/001–007</code> · <code>docs/FINDINGS_AND_LEARNINGS.md</code></div>
+  <div class="callout">Writeups: <code>docs/LAB_BOOK.md</code> · <code>docs/experiments/001–008</code> · <code>docs/FINDINGS_AND_LEARNINGS.md</code></div>
   <aside class="notes">Leave the Traces tab open for Q&amp;A and open questions about trace IDs, scorer design, and cost.</aside>
 </section>
 

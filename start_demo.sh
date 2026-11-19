@@ -86,5 +86,5 @@ Ready. Run of show (see DEMO_SCRIPT.md):
   3  .venv/bin/python trace_multi_turn.py       # one session, three turns
   4  .venv/bin/python trace_errors.py           # error signatures
   5  .venv/bin/python analyze_trace_metrics.py  # latency / tokens / cost
-     .venv/bin/python evaluate_traces.py --pilot
+     .venv/bin/python evaluate_traces.py --pilot --with-controls  # clean + planted controls
 EOF

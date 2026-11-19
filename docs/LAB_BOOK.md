@@ -68,6 +68,7 @@ View traces: Databricks **Experiments** → experiment (default `/Shared/my-firs
 | 005 | 2026-11-18 | Error/failure tracing (F-007) | Completed | `/Shared/my-first-trace` | `trace_errors.py`, tool error / unhandled exception / handled error cases | Success: 3 traces; unhandled → trace ERROR + exception events; handled → span ERROR only; `status` filter works | [005-error-tracing.md](experiments/005-error-tracing.md) |
 | 006 | 2026-11-18 | Latency, token & cost analysis (F-008) | Completed | `/Shared/my-first-trace` | `analyze_trace_metrics.py`, read-only aggregation over 17 traces | Success: per-scenario latency/token/cost summary; slowest trace `tr-983651f7eb6bf22274142b9362c21858` (4304 ms, two ChatOpenAI spans); most expensive `tr-66e408aab933cac6feb63ec91b042abe` ($0.000121) | [006-latency-cost-analysis.md](experiments/006-latency-cost-analysis.md) |
 | 007 | 2026-11-18 | GenAI evaluation on existing traces (F-009) | Completed | `/Shared/my-first-trace` | `evaluate_traces.py`, precomputed mode, 3 scorers (LLM judge + 2 deterministic) | Success: eval run `345d6069efe64933a8d04e350a264381`, 11 records × 3 scorers, all means 1.0, 0 unscored/errored | [007-genai-evaluation.md](experiments/007-genai-evaluation.md) |
+| 008 | 2026-11-19 | Known-bad scorer controls | Completed | `/Shared/my-first-trace` | `evaluate_traces.py --pilot --with-controls`, 3 clean + 4 planted controls, city alias map | Success: run `a4809bf5e16a42fcaca5ed77f2d38120`; clean 3/3, controls 4/4 caught, means 0.57/0.57/0.86 | [008-scorer-controls.md](experiments/008-scorer-controls.md) |
 
 **Status legend:** Planned · In progress · Completed · Blocked · Abandoned
 
@@ -87,6 +88,7 @@ Individual writeups live in [`docs/experiments/`](experiments/):
 - [005-error-tracing.md](experiments/005-error-tracing.md) — tool errors, unhandled exceptions, handled errors
 - [006-latency-cost-analysis.md](experiments/006-latency-cost-analysis.md) — latency percentiles, token/cost totals, span hotspot analysis
 - [007-genai-evaluation.md](experiments/007-genai-evaluation.md) — precomputed evaluation, registered scorers, row-level assessments
+- [008-scorer-controls.md](experiments/008-scorer-controls.md) — planted known-bad controls, city alias fix, clean-vs-controls reporting
 
 ---
 
@@ -116,7 +118,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | F-011 | Unity Catalog trace storage | UC-backed trace storage improves governance/queryability for this workflow. | Medium | M | UC permissions/config | Proposed | Follow [trace-unity-catalog](https://docs.databricks.com/aws/en/mlflow3/genai/tracing/trace-unity-catalog); compare limits/capabilities. |
 | F-012 | Experiment organization strategy | Separate dev/test/prod experiments and naming conventions reduce clutter and risk. | Medium | S | Team/workspace conventions | Proposed | Propose path scheme, tags, and retention expectations. |
 | F-013 | Production-style monitoring/alerting workflow | Traces can feed dashboards/alerts for ongoing quality and performance monitoring. | Medium | L | Production-like workload | Proposed | Identify key signals and Databricks/Lakehouse integration path. |
-| F-014 | Prompt/version comparison (A/B) | Side-by-side traced runs make prompt/model changes measurable. | Medium | M | Variant configs | Proposed | Hold inputs constant; compare outputs, traces, and eval scores. Reuse `evaluate_traces.py` suite. |
+| F-014 | Prompt/version comparison (A/B) | Side-by-side traced runs make prompt/model changes measurable. | Medium | M | Variant configs | Proposed | Known-bad controls now available via `--with-controls` (exp 008). Hold inputs constant; compare outputs, traces, and eval scores. Reuse `evaluate_traces.py` suite. |
 
 > Add new ideas freely; include a short hypothesis and dependency so they are actionable.
 
@@ -142,7 +144,8 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-18 | Unhandled errors → trace ERROR with exception events; handled errors → span ERROR only | `@mlflow.trace` captures type/message/stacktrace automatically; `record_exception` + `set_status(ERROR)` for handled cases | Verified in exp 005; use `status = 'ERROR'` (not `state`) in `search_traces` filters |
 | 2026-11-18 | Latency/token/cost come from `TraceInfo.execution_time_ms`, `token_usage`, `cost`; segment by scenario/status | No-LLM-call traces have null usage/cost and fast latency, so mixed aggregates mislead | Verified in exp 006; `analyze_trace_metrics.py` is the reusable read-only harness |
 | 2026-11-18 | Precomputed GenAI evaluation works over existing traces with managed `databricks` judge + deterministic scorers | No agent re-run, dataset, or external key needed; row-level results live in the eval run | Verified in exp 007 (11 records, 0 errored); exclude answerless error traces and validate scorers on known-bad inputs |
-| 2026-11-18 | Normalize Unicode whitespace and use word boundaries in deterministic text scorers | Model output uses U+202F in "San Francisco" and "sf." at sentence end, causing false negatives | Fixed in exp 007 pilot; `expectations` also pollute `result.passed`, so count real scorer verdicts |
+| 2026-11-18 | Normalize Unicode whitespace and use word boundaries in deterministic text scorers | Model output uses U+202F in "San Francisco" and "sf." at sentence end, causing false negatives | Fixed in exp 007 pilot; `expectations` also pollute `result.passed`, so count real scorer verdicts |
+| 2026-11-19 | Add planted known-bad controls and a city-alias map to the evaluation harness | Uniform 1.0 is not evidence; "New York City" for expected "NYC" was a real false negative | Verified in exp 008 (`a4809bf5e16a42fcaca5ed77f2d38120`): clean 3/3, controls 4/4 caught, non-uniform means |
 
 ## 9. Change log
 
@@ -156,6 +159,7 @@ Use this backlog to propose, prioritize, and track future work. Move items into 
 | 2026-11-18 | Added `trace_errors.py` and experiment 005 | F-007 completed; 3 error signatures verified with exception events and filtering |
 | 2026-11-18 | Added `analyze_trace_metrics.py` and experiment 006 | F-008 completed; 17 traces aggregated by scenario with latency/token/cost and span hotspot breakdown |
 | 2026-11-18 | Added `evaluate_traces.py` and experiment 007 | F-009 completed; 3 registered scorers, 11 records scored, pilot bugs fixed and documented |
+| 2026-11-19 | Added `--with-controls` and experiment 008; fixed NYC/SF city aliases | Known-bad controls caught 4/4; clean sample 3/3; demo Act 5B now proves discrimination |
 
 ---
 *Keep entries factual, link to traces/evidence, and prefer small reproducible experiments over large undocumented changes.*
