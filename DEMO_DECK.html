@@ -84,6 +84,7 @@
   <div class="row" style="gap:12px">
     <span class="tag">Databricks FM</span><span class="tag">Autolog + manual spans</span>
     <span class="tag">Sessions</span><span class="tag">Failure signatures</span><span class="tag">GenAI evaluation</span>
+    <span class="tag">Retrieval spans</span><span class="tag">Endpoint A/B</span>
   </div>
   <aside class="notes">Keep this to one breath. The background is the real traces list. If you want a cold open, advance to slide 2 and run the script live.</aside>
 </section>
@@ -91,7 +92,7 @@
 <!-- 2. ACT 1: REAL APP + LIVE CUE -->
 <section class="slide" data-title="Act 1 — Live trace">
   <div class="kicker">Act 1 · Cold open</div>
-  <h2>34 real traces in one Databricks experiment</h2>
+  <h2>139 real traces in one Databricks experiment</h2>
   <div class="frame wide">
     <img src="docs/demo/screenshots/01-traces-list.png" alt="MLflow Traces list showing real agent traces">
     <span class="badge">MLFLOW UI · TRACES TAB</span>
@@ -245,7 +246,57 @@
   <aside class="notes">Five scripted cases run through the real create_agent + autolog loop; every trace was fetched back and its tool names, arguments, counts and outcomes asserted with zero judge calls before a manifest was written. Then three scorer configurations judge those same traces twice, joined by trace_id with a scenario re-check. Run <code>trace_tool_calls.py</code> then <code>evaluate_tool_calls.py</code>. Limits: five unambiguous traces, two repetitions — a smoke test, not a stability guarantee for borderline cases.</aside>
 </section>
 
-<!-- 8. CLOSE -->
+<!-- 8. ACT 5D: RAG RETRIEVAL -->
+<section class="slide" data-title="Act 5D — Retrieval">
+  <div class="kicker">Act 5D · Learning breadth · Make relevance debuggable</div>
+  <h2>Retrieval as evidence: what was found, and why</h2>
+  <div class="row">
+    <div class="frame half">
+      <img src="docs/demo/screenshots/14-rag-waterfall.png" alt="RAG trace with CHAIN, EMBEDDING, RETRIEVER and LLM spans">
+      <span class="badge">4 TYPED SPANS · 5.56s</span>
+      <div class="cap"><code>rag_query</code> → embed → retrieve → answer; tags <code>lab_book=F-006</code>, <code>scenario=rag_retrieval</code>.</div>
+    </div>
+    <div class="frame half">
+      <img src="docs/demo/screenshots/15-rag-retriever.png" alt="Retriever span inputs and ranked documents with scores">
+      <span class="badge">RETRIEVER · RANKED DOCS</span>
+      <div class="cap">Inputs: query, top_k=3, index. Outputs: sf-current 0.7657, sf-rain 0.6827, sf-wind 0.6581.</div>
+    </div>
+  </div>
+  <div class="row" style="margin-top:16px">
+    <div class="card" style="flex:1"><div class="big" style="font-size:42px">3 / 3</div><div class="label">queries verified · expected doc first</div></div>
+    <div class="card" style="flex:1"><div class="big" style="font-size:42px">0.08–0.17</div><div class="label">top-doc score gap across 3 cases</div></div>
+    <div class="card" style="flex:1"><div class="big" style="font-size:42px">1024</div><div class="label">embedding dimensions, not a blob in the trace</div></div>
+  </div>
+  <div class="callout" style="margin-top:16px">Wrong answer? Read the <code>RETRIEVER</code> outputs first. Query, top_k and ranked doc ids/scores live in the span, so bad retrieval and bad generation are distinguishable from the trace alone.</div>
+  <aside class="notes">One-time <code>setup_rag_index.py</code> creates a UC Delta table and an AI Search Delta Sync index with <code>databricks-gte-large-en</code> managed embeddings; <code>trace_rag.py</code> runs three cases, flushes, fetches each trace back and asserts span types, tags and top document before writing the manifest. 12-document weather corpus — a real vector store, but not a relevance benchmark. Direct Access indexing is unsupported here; the billable <code>mlflow_lab_vec</code> endpoint remains until teardown. Exp 014 / F-006.</aside>
+</section>
+
+<!-- 9. ACT 6: ENDPOINT A/B -->
+<section class="slide" data-title="Act 6 — Endpoint A/B">
+  <div class="kicker">Act 6 · Reusable demo · Compare on a standing set</div>
+  <h2>Same prompt, same verdicts — a different bill</h2>
+  <div class="row">
+    <div class="frame half">
+      <img src="docs/demo/screenshots/16-ab-gpt-oss.png" alt="gpt-oss-20b A/B trace with seven spans">
+      <span class="badge">VARIANT: GPT-OSS-20B</span>
+      <div class="cap">Trace <code>tr-e96d66a…</code> · 2341 ms · 461 tokens · $0.0000608.</div>
+    </div>
+    <div class="frame half">
+      <img src="docs/demo/screenshots/17-ab-maverick.png" alt="llama-4-maverick A/B trace with seven spans">
+      <span class="badge">VARIANT: LLAMA-4-MAVERICK</span>
+      <div class="cap">Trace <code>tr-72afbaf…</code> · 2041 ms · 876 tokens · $0.0004580.</div>
+    </div>
+  </div>
+  <div class="row" style="margin-top:16px">
+    <div class="card" style="flex:1"><div class="big" style="font-size:42px">0 changes</div><div class="label">scorer verdicts across clean + 6 controls</div></div>
+    <div class="card" style="flex:1"><div class="big" style="font-size:42px">6 / 6</div><div class="label">planted controls caught in both arms</div></div>
+    <div class="card" style="flex:1"><div class="big" style="font-size:42px">13% / 7.5×</div><div class="label">maverick faster / more expensive</div></div>
+  </div>
+  <div class="callout" style="margin-top:16px">A tie in quality is still a result. Variant tags isolate each arm, <code>--compare</code> diffs row-level verdicts, and trace metrics supply the operational difference. One clean record per arm — enough to prove the loop, not to rank endpoints.</div>
+  <aside class="notes">Run <code>regression_suite.py --ab gpt-oss-20b --endpoint databricks-gpt-oss-20b</code> and the maverick equivalent, then <code>--compare</code> the two output JSON files. Each generated trace carries <code>variant</code> and <code>model_endpoint</code> tags; <code>evaluate_traces.py --variant</code> keeps untagged evaluation traces out of the score. Scripted tool cases are arm-independent and deliberately excluded. Single-trace latency/cost includes cold start; endpoint calls are non-deterministic. Exp 013 / F-014.</aside>
+</section>
+
+<!-- 10. CLOSE -->
 <section class="slide" data-title="Close">
   <div class="kicker">Close · Honest limit</div>
   <h2>The pipeline is the achievement.<br>The limits are the next experiment.</h2>

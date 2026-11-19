@@ -59,7 +59,7 @@
 
 ## 5. Analysis
 
-- **What happened:** the first query cost 5557 ms because it included endpoint/index compute warm-up; the next two settled under 1.2 s. All three queries ranked the intended document first with a clear score gap to the runner-up (0.13–0.17), so the corpus and embedding model are well separated for these cases.
+- **What happened:** the first query cost 5557 ms because it included endpoint/index compute warm-up; the next two settled under 1.2 s. All three queries ranked the intended document first with a clear score gap to the runner-up (0.08–0.17; the warm-up `sf_current` case was the narrowest), so the corpus and embedding model are well separated for these cases.
 - **Why it worked:** a Delta Sync index with a managed embedding source keeps ingestion and query embeddings on the same model (`databricks-gte-large-en`), avoiding train/serve skew. Storing the query, top_k and ranked scores on the RETRIEVER span makes a future relevance mistake attributable to retrieval (wrong docs) versus generation (right docs, wrong answer).
 - **Surprises / risks:** endpoint provisioning took several minutes after the endpoint reported ONLINE; queries are rejected until the index reports `ready`. The AI Search endpoint is billable and remains in the workspace. Scores are from one small static corpus, not a relevance benchmark.
 - **Comparison to prior runs:** unlike exps 011–012 (scripted tool spans), these retrieval spans are produced by a real external vector store, so the evidence is not a fixture.

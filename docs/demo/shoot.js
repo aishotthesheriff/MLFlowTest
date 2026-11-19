@@ -37,6 +37,10 @@ const targets = [
   { file: '11-tool-wrong-tool.png',    trace: '1dd34cbc', selectSpan: 'get_temperature', note: 'get_temperature(SF) tool span' },
   { file: '12-tool-wrong-args.png',    trace: '9f9dab49', selectSpan: 'get_weather',    note: 'get_weather(NYC) tool span' },
   { file: '13-tool-retry-storm.png',   trace: 'ba8b262c', selectSpan: 'get_weather',    note: 'three get_weather(SF) tool spans' },
+  { file: '14-rag-waterfall.png',      trace: 'e7540806', note: 'RAG CHAIN/EMBEDDING/RETRIEVER/LLM spans' },
+  { file: '15-rag-retriever.png',      trace: 'e7540806', selectSpan: 'retrieve_docs', note: 'retriever inputs and ranked docs' },
+  { file: '16-ab-gpt-oss.png',         trace: 'e96d66aa', note: 'gpt-oss-20b A/B arm' },
+  { file: '17-ab-maverick.png',        trace: '72afbaf9', note: 'llama-4-maverick A/B arm' },
 ];
 
 // Fallback IDs are the ones visible in the committed screenshots.
@@ -52,6 +56,9 @@ const FALLBACK = {
   '1dd34cbc': 'tr-b13225c85a997f5330367df7daab202e',
   '9f9dab49': 'tr-ba4e062f61a4a44599fafa0169cac55d',
   'ba8b262c': 'tr-859f09b6f20a080fa18ffc15af15586a',
+  'e7540806': 'tr-3868764f15a607d277c50ac291ad3e3b',
+  'e96d66aa': 'tr-dc278d594e4f0e52c42e8a48b0966f07',
+  '72afbaf9': 'tr-630eb3933feed389c701c428ed2aaca2',
 };
 
 function localId(prefix) {
@@ -82,6 +89,9 @@ for (const t of selected) {
   });
   const page = await ctx.newPage();
   for (const t of selected) {
+    // Force a full document load: changing only the URL hash leaves the old
+    // trace selected in the SPA, which produced screenshots of the wrong run.
+    await page.goto('about:blank');
     await page.goto(BASE + '/' + t.url, { waitUntil: 'domcontentloaded' });
     // The guidance popover renders after load; dismiss it before capturing.
     await page.waitForTimeout(1200);

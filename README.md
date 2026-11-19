@@ -35,7 +35,7 @@ A ~7-minute live demo of the tracing, failure, metrics, and evaluation experimen
 - [DEMO.md](DEMO.md) — overview and quick start
 - [DEMO_SCRIPT.md](DEMO_SCRIPT.md) — full run-of-show with pre-flight and troubleshooting
 - [DEMO_SUMMARY_AND_TALK_TRACK.md](DEMO_SUMMARY_AND_TALK_TRACK.md) — one-page summary and 2–3 minute talk track
-- [DEMO_DECK.html](DEMO_DECK.html) — 8-slide companion deck with real MLflow UI screenshots ([provenance](docs/demo/README.md))
+- [DEMO_DECK.html](DEMO_DECK.html) — 10-slide companion deck with real MLflow UI screenshots ([provenance](docs/demo/README.md))
 
 ## Lab book
 

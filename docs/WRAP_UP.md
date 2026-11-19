@@ -18,7 +18,7 @@ Original mission: produce a traced agent run from a local Python 3.15 venv into 
 | Measurement | `analyze_trace_metrics.py` (latency/token/cost over 17 traces) |
 | Evaluation | `evaluate_traces.py` (5 output scorers), `evaluate_tool_calls.py` (3 tool-call configs) — 8 registered scorers |
 | Repeatability | `lab_tags.py` (canonical tags), `regression_suite.py` (validate/run/ab/compare), `requirements.txt` (6 pins) + `requirements.lock.txt` (160 packages) + `rebuild_venv.sh` |
-| Evidence | 14 writeups in `docs/experiments/`, LAB_BOOK, FINDINGS, manifests in `docs/demo/`, 8-slide `DEMO_DECK.html`, `start_demo.sh --check-only` |
+| Evidence | 14 writeups in `docs/experiments/`, LAB_BOOK, FINDINGS, manifests in `docs/demo/`, 10-slide `DEMO_DECK.html`, `start_demo.sh --check-only` |
 
 ## 4. Evidence ledger — all 14 experiments
 
@@ -37,7 +37,7 @@ Original mission: produce a traced agent run from a local Python 3.15 venv into 
 | 011 | 5 traces in `lab-f011-1795112059`; tool names/args/counts/outcomes asserted from fetched spans, zero judge calls; manifest verified |
 | 012 | 4 runs (`bf9d9e0a…`, `6661dc37…`, `3c0ad95e…`, `bbbb4b81…`); verdicts `yes,no,no,no,no` in both reps, zero flips; efficiency says `yes` on `tool_no_call` where correctness says `no` |
 | 013 | `gpt-oss-20b` vs `llama-4-maverick`: 1 clean + 6 controls per arm, 6/6 caught both, 0 verdict changes; maverick ~13% faster, ~7.5× cost |
-| 014 | 3/3 RAG traces verified, expected top doc first with 0.13–0.17 score gap; retrieval I/O and canonical tags asserted; `docs/demo/rag_manifest.json` |
+| 014 | 3/3 RAG traces verified, expected top doc first with 0.08–0.17 score gap; retrieval I/O and canonical tags asserted; `docs/demo/rag_manifest.json` |
 
 ## 5. Key decisions (with reasoning)
 

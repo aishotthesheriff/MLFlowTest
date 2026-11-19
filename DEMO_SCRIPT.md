@@ -2,7 +2,7 @@
 
 **Total Runtime:** ~7 minutes (~9 minutes with one optional act, ~11 with both). For a 4-minute cut, run Act 1 and Act 5 only.
 
-**Story shape:** show the result first, explain it second, prove it third. Companion deck: `DEMO_DECK.html` (8 slides with real MLflow UI screenshots from the experiment, including the tool-call waterfall — see `docs/demo/README.md` for provenance). The deck is a visual reference; the terminal and the Databricks Traces tab remain the live screens.
+**Story shape:** show the result first, explain it second, prove it third. Companion deck: `DEMO_DECK.html` (10 slides with real MLflow UI screenshots from the experiment, including the tool-call waterfall, RAG retrieval spans and the endpoint A/B arms — see `docs/demo/README.md` for provenance). The deck is a visual reference; the terminal and the Databricks Traces tab remain the live screens.
 
 | Act | What the audience sees | Time |
 | --- | --- | --- |
@@ -52,7 +52,7 @@
 
    Full IDs are in `docs/experiments/001`–`007` and `docs/FINDINGS_AND_LEARNINGS.md`. Search by the short prefix in the Databricks Traces search box.
 
-4. **Note:** every evaluation run appends traces to this experiment. The count grows (17 original lab traces, 34 at last check). The demo always selects by scenario/tag, never by row number.
+4. **Note:** every evaluation run appends traces to this experiment. The count grows (17 original lab traces, 139 at last check). The demo always selects by scenario/tag, never by row number.
 
 ---
 
