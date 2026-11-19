@@ -6,7 +6,7 @@
 
 ## 1. Executive Summary
 
-We built a small lab that turns an agent's execution into **queryable evidence in Databricks**, then measures and scores that evidence — with no external LLM key and no separate observability vendor. Twelve experiments (001–012) produced a repeatable loop: trace → inspect → measure → evaluate → document.
+We built a small lab that turns an agent's execution into **queryable evidence in Databricks**, then measures and scores that evidence — with no external LLM key and no separate observability vendor. Fourteen experiments (001–014) produced a repeatable loop: trace → inspect → measure → evaluate → document.
 
 **What the trace shows:** a LangGraph weather agent on `databricks-gpt-oss-20b` via `ChatDatabricks`. Autolog captures the model and tool calls; manual `@mlflow.trace` spans capture our own pre/post-processing inside the same waterfall (7 spans → 10). Multi-turn runs become three traces under one `session_id`, so each turn keeps clean I/O while the conversation stays retrievable — turn 3 recalled the first city from history with no tool call.
 
@@ -101,6 +101,8 @@ We built a small lab that turns an agent's execution into **queryable evidence i
 .venv/bin/python evaluate_traces.py       # Act 5: full evaluation (all usable records)
 .venv/bin/python trace_tool_calls.py      # Act 5C: 5 tool-call cases + verified manifest
 .venv/bin/python evaluate_tool_calls.py   # Act 5C: 2 reps x 2 passes, no predict_fn
+.venv/bin/python setup_rag_index.py       # F-006: provision + seed Databricks vector store (once)
+.venv/bin/python trace_rag.py             # F-006: 3 traced RAG queries + verified manifest
 open DEMO_DECK.html                        # companion deck
 ```
 
@@ -112,4 +114,4 @@ open DEMO_DECK.html                        # companion deck
 - **Consistency-judge run:** `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments/1675992194464286/evaluation-runs?selectedRunUuid=30eabe1d8fdf4540a8ef9c8ee5dae368`
 - **Tool-judge runs (rep 1):** `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments/1675992194464286/evaluation-runs?selectedRunUuid=bf9d9e0a1cc44b188d074a4765ca72b8` · `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments/1675992194464286/evaluation-runs?selectedRunUuid=6661dc371beb41a889d3452ae61ac5a8`
 - **Tool-judge runs (rep 2):** `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments/1675992194464286/evaluation-runs?selectedRunUuid=3c0ad95e42e642d39d017785b03e676f` · `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments/1675992194464286/evaluation-runs?selectedRunUuid=bbbb4b81beca4ae6a49af77708d47fea`
-- **Full writeups:** `docs/LAB_BOOK.md`, `docs/experiments/001`–`012`, `docs/FINDINGS_AND_LEARNINGS.md`
+- **Full writeups:** `docs/LAB_BOOK.md`, `docs/experiments/001`–`014`, `docs/FINDINGS_AND_LEARNINGS.md`

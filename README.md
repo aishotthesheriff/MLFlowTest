@@ -41,7 +41,7 @@ A ~7-minute live demo of the tracing, failure, metrics, and evaluation experimen
 
 - [docs/LAB_BOOK.md](docs/LAB_BOOK.md) — experiment log, environment snapshot, ideas/backlog for future experiments
 - [docs/FINDINGS_AND_LEARNINGS.md](docs/FINDINGS_AND_LEARNINGS.md) — consolidated fixes, findings, and learnings across all experiments
-- [docs/experiments/](docs/experiments/) — per-experiment writeups and template ([001-first-trace.md](docs/experiments/001-first-trace.md), [002-foundation-model.md](docs/experiments/002-foundation-model.md), [003-manual-spans.md](docs/experiments/003-manual-spans.md), [004-multi-turn-tracing.md](docs/experiments/004-multi-turn-tracing.md), [005-error-tracing.md](docs/experiments/005-error-tracing.md), [006-latency-cost-analysis.md](docs/experiments/006-latency-cost-analysis.md), [007-genai-evaluation.md](docs/experiments/007-genai-evaluation.md), [008-scorer-controls.md](docs/experiments/008-scorer-controls.md), [009-factuality-check.md](docs/experiments/009-factuality-check.md), [010-self-consistency-judge.md](docs/experiments/010-self-consistency-judge.md), [011-tool-call-tracing.md](docs/experiments/011-tool-call-tracing.md), [012-tool-call-judges.md](docs/experiments/012-tool-call-judges.md))
+- [docs/experiments/](docs/experiments/) — per-experiment writeups and template ([001-first-trace.md](docs/experiments/001-first-trace.md), [002-foundation-model.md](docs/experiments/002-foundation-model.md), [003-manual-spans.md](docs/experiments/003-manual-spans.md), [004-multi-turn-tracing.md](docs/experiments/004-multi-turn-tracing.md), [005-error-tracing.md](docs/experiments/005-error-tracing.md), [006-latency-cost-analysis.md](docs/experiments/006-latency-cost-analysis.md), [007-genai-evaluation.md](docs/experiments/007-genai-evaluation.md), [008-scorer-controls.md](docs/experiments/008-scorer-controls.md), [009-factuality-check.md](docs/experiments/009-factuality-check.md), [010-self-consistency-judge.md](docs/experiments/010-self-consistency-judge.md), [011-tool-call-tracing.md](docs/experiments/011-tool-call-tracing.md), [012-tool-call-judges.md](docs/experiments/012-tool-call-judges.md), [013-endpoint-ab.md](docs/experiments/013-endpoint-ab.md), [014-rag-retrieval-tracing.md](docs/experiments/014-rag-retrieval-tracing.md))
 
 ### Optional experiments
 ```bash
@@ -80,6 +80,17 @@ python regression_suite.py --compare \
 ```
 
 `--ab` also accepts `--prompt "..."` to hold the endpoint fixed and vary the message. Each generated trace carries `variant` and `model_endpoint` tags, and `evaluate_traces.py --variant` isolates that arm so untagged evaluation traces do not leak into the score. The five scripted tool cases are arm-independent and are deliberately not re-judged. The worked example and results are in [exp 013](docs/experiments/013-endpoint-ab.md).
+
+### RAG retrieval tracing (F-006)
+
+One-time provisioning (creates a UC schema, a standard AI Search endpoint, a Delta table, and a managed-embedding index), then run three traced queries:
+
+```bash
+python setup_rag_index.py     # workspace.mlflow_lab.weather_docs_index on mlflow_lab_vec
+python trace_rag.py           # verifies 3 traces and writes docs/demo/rag_manifest.json
+```
+
+`trace_rag.py` emits a CHAIN root with EMBEDDING, RETRIEVER and LLM child spans. The RETRIEVER span records the query, `top_k`, ranked doc ids and scores — the retrieval evidence lives in the trace, not in stdout. Names can be overridden with `RAG_ENDPOINT`, `RAG_INDEX`, `RAG_EMBEDDING_ENDPOINT` and `RAG_CHAT_ENDPOINT`. The AI Search endpoint is a billable Databricks resource; delete the index and endpoint when the lab is retired. See [exp 014](docs/experiments/014-rag-retrieval-tracing.md).
 
 ## Notes
 

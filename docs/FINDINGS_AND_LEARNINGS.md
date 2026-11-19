@@ -1,6 +1,6 @@
 # Fixes, Findings & Learnings
 
-A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It collects the bugs we hit, the fixes that worked, the platform behaviors we confirmed, and the patterns we adopted across experiments 001-012. Source writeups live in [`docs/experiments/`](experiments/); the run log lives in [`docs/LAB_BOOK.md`](LAB_BOOK.md).
+A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It collects the bugs we hit, the fixes that worked, the platform behaviors we confirmed, and the patterns we adopted across experiments 001-014. Source writeups live in [`docs/experiments/`](experiments/); the run log lives in [`docs/LAB_BOOK.md`](LAB_BOOK.md).
 
 **Last updated:** 2026-11-19 · **Workspace:** `/Users/yourbabes/dev/Databricks/MLFlowTest` · **Experiment:** `/Shared/my-first-trace` (`1675992194464286`)
 
@@ -119,6 +119,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 18. **A/B needs variant identity and structured output, not just two `--run` calls:** `--run` re-scores one mixed trace pool, so both arms would be identical, and stdout reports cannot be diffed. Tag each generated trace with `variant`/`model_endpoint`, filter with `evaluate_traces.py --variant`, persist row-level verdicts with `--output`, and diff with `--compare`. (exp 013)
 19. **Don't re-judge arm-independent evidence:** scripted tool cases cannot change with the endpoint/prompt, and re-running their judge overwrote the canonical exp-012 artifact with noise. `--ab` excludes them; keep the frozen evidence untouched. (exp 013)
 20. **Equal scorer verdicts can still hide a real operational difference:** with 0 verdict changes and 6/6 controls caught in both arms, the distinguishing signal was trace metrics — llama-4-maverick was ~13% faster but ~7.5× the cost of gpt-oss-20b. Attach latency/usage/cost to each arm so scorer ties remain actionable. (exp 013)
+21. **Check embedding availability before designing a vector store:** the trial Snowflake account blocks both legacy `EMBED_TEXT_*` (new accounts) and current `AI_EMBED_*` (trial accounts), so a Cortex-embedded store was impossible; on Databricks, Direct Access AI Search indexes are unsupported in this workspace, but a Delta Sync index with a managed embedding source works. Probe the platform first, then pick the store. (F-006)
 
 ---
 
@@ -148,7 +149,7 @@ Ordered by the lab goals set 2026-11-19 — reusable demo, learning breadth, jud
 - [x] **(reusable demo, done 2026-11-19)** Standardize tags across every script (F-010): `lab_tags.py` supplies `lab_book`, `scenario`, `env`, `git_sha` to all experiment scripts.
 - [x] **(reusable demo, done 2026-11-19)** Standing A/B regression set (F-014): `regression_suite.py` covers the 6 output controls, 5 tool cases and 3 verdicts by importing the eval scripts' constants; `--validate` checks coverage/baseline offline, `--run LABEL` re-scores frozen cases, `--ab LABEL [--endpoint/--prompt]` generates + scores a real variant arm, `--compare A B` diffs verdicts. A real endpoint A/B ran in exp 013.
 - [x] **(reusable demo, done 2026-11-19)** Harden the environment: dependency versions are pinned in `requirements.txt` + `requirements.lock.txt`, with `./rebuild_venv.sh` verified on a clean Python 3.15.2 venv (F-012).
-- **(learning breadth)** Explore RAG/retrieval tracing (F-006) or another named autolog integration (F-004) once demo work is done.
+- [x] **(learning breadth, done 2026-11-19)** RAG/retrieval tracing (F-006): `setup_rag_index.py` + `trace_rag.py` put query/top_k and ranked doc ids/scores on a verified `RETRIEVER` span over a Databricks AI Search index (exp 014). F-004 (a second autolog integration) was abandoned — one integration plus manual spans already teaches the span-schema lesson.
 - **(judge trust)** Add a legitimate failure-plus-retry control to check the efficiency judge for false positives on recovery (F-016).
 - **(judge trust)** Add an LLM `Correctness` check with `expected_facts` for paraphrase robustness and compare it against the deterministic check; use human-labeled examples before trusting subjective scores (deterministic check landed in exp 009, consistency judge in exp 010).
 - [x] Decide on Unity Catalog trace storage and shared vs project-specific experiment paths → resolved in [LAB_BOOK.md](LAB_BOOK.md) §7: keep the shared demo path with an env override, defer UC storage (F-011).

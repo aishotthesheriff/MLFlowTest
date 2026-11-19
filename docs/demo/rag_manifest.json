@@ -1,0 +1,41 @@
+{
+  "index": "workspace.mlflow_lab.weather_docs_index",
+  "cases": [
+    {
+      "case": "sf_current",
+      "query": "What is the current weather in San Francisco?",
+      "expected_doc": "sf-current",
+      "retrieved_doc_ids": [
+        "sf-current",
+        "sf-rain",
+        "sf-wind"
+      ],
+      "answer": "The current weather in San\u202fFrancisco is cloudy with a temperature around 14\u202f\u00b0C, high coastal humidity, and the sky is mostly overcast.",
+      "trace_id": "tr-e754080659cb22bee921db7192242ac1"
+    },
+    {
+      "case": "nyc_snow",
+      "query": "Will it snow in New York tonight?",
+      "expected_doc": "nyc-snow",
+      "retrieved_doc_ids": [
+        "nyc-snow",
+        "nyc-current",
+        "sf-rain"
+      ],
+      "answer": "Yes \u2013 the forecast indicates that snow showers are possible overnight in New\u202fYork City, though any accumulation is expected to stay below about two\u202fcentimeters.",
+      "trace_id": "tr-de009be8f86449f0cae96e555ed0c73c"
+    },
+    {
+      "case": "tokyo_weather",
+      "query": "What is the weather like in Tokyo?",
+      "expected_doc": "tokyo-storms",
+      "retrieved_doc_ids": [
+        "tokyo-storms",
+        "london-fog",
+        "nyc-current"
+      ],
+      "answer": "Tokyo is humid and experiencing afternoon thunderstorms, with heavy downpours possible between 15:00 and 18:00 local time.",
+      "trace_id": "tr-66cb5bafe7c710a681e5203cfc51ce92"
+    }
+  ]
+}
