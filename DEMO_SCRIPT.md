@@ -11,13 +11,13 @@
 | 3 | Multi-turn: three traces, one session, cross-turn recall | ~1.5 min |
 | 4 | Failure signatures: trace `ERROR` vs span `ERROR` | ~1 min |
 | 5 | Proof: latency/cost + an evaluation run over stored traces | ~2 min |
-| 5B (opt.) | Known-bad controls: planted defects the harness catches | ~1.5 min |
+| 5B (opt.) | The control the old suite missed: right city, wrong fact | ~2 min |
 
 ---
 
 ## Pre-Flight Checklist (10 minutes before)
 
-> **One-command check:** `./start_demo.sh --check-only` verifies the venv, Databricks auth, the experiment, the eight evidence traces, and the three registered scorers. `./start_demo.sh` also opens the deck and the Traces tab. The manual steps below are what the launcher automates.
+> **One-command check:** `./start_demo.sh --check-only` verifies the venv, Databricks auth, the experiment, the eight evidence traces, and the four registered scorers. `./start_demo.sh` also opens the deck and the Traces tab. The manual steps below are what the launcher automates.
 
 1. **Verify the environment** from `/Users/yourbabes/dev/Databricks/MLFlowTest`:
    ```bash
@@ -154,38 +154,41 @@ Expected: `Session ID: lab-f007-…` and three trace IDs (tool error, unhandled 
 
 **Action 2 — score (clean sample + planted controls):**
 ```bash
-.venv/bin/python evaluate_traces.py --pilot --with-controls   # 3 clean + 4 planted controls, fast
-.venv/bin/python evaluate_traces.py                          # full: 11 records x 3 scorers
+.venv/bin/python evaluate_traces.py --pilot --with-controls   # 3 clean + 5 planted controls, fast
+.venv/bin/python evaluate_traces.py                          # full: all usable records x 4 scorers
 ```
 **Say (point at the run URL):**
-> "This is MLflow GenAI evaluation in precomputed mode: I selected traces with a usable answer, excluded the answerless error traces, and scored them without calling the agent again. One LLM judge — `relevance_to_query`, running the managed Databricks judge — plus two deterministic checks: does the answer name the city the user asked about, and is it under 300 characters. The pilot runs 3 clean records and 4 planted known-bad controls. Clean sample: 3/3. Controls: 4/4 caught. The means are 0.57, 0.57, 0.86 — non-uniform by design."
+> "This is MLflow GenAI evaluation in precomputed mode: I selected traces with a usable answer, excluded the answerless error traces, and scored them without calling the agent again. One LLM judge — `relevance_to_query`, running the managed Databricks judge — plus three deterministic checks: does the answer name the city the user asked about, does it state the ground-truth fact, and is it under 300 characters. The pilot runs 3 clean records and 5 planted known-bad controls. Clean sample: 3/3. Controls: 5/5 caught. The means are 0.63, 0.57, 0.63, 0.88 — non-uniform by design."
 
 **Land it:**
-> "And I registered all three scorers in the experiment, so this is a repeatable harness, not a one-off script."
+> "And I registered all four scorers in the experiment, so this is a repeatable harness, not a one-off script."
 
 ---
 
-## Act 5B (Optional): Known-Bad Controls — Prove the Scorer Discriminates (~1.5 min)
+## Act 5B (Optional): The Control the Old Suite Missed (~2 min)
 
 **Screen:** Deck slide 6, then the terminal/pilot evidence from `--with-controls`.
 
 **Say:**
-> "A 1.0 mean is not evidence by itself. So I planted four known-bad records: wrong city, off-topic, over-length, and a refusal."
+> "A 1.0 mean is not evidence by itself. So I planted five known-bad records: wrong city, off-topic, over-length, refusal — and one that is right city, wrong fact."
 
 **Point at the output:**
-> "Clean sample: 3/3. Controls: 4/4 caught. Wrong city and off-topic fail the city check and the judge; over-length fails the length check; the refusal fails the city check and the judge. The aggregate means drop to 0.57, 0.57, 0.86 — that is the point: a high mean is not evidence, a caught control is."
+> "Clean sample: 3/3. Controls: 5/5 caught. But look at the last row: `right_city_wrong_fact` — 'The weather in San Francisco is sunny and 75F.' The city check passes, the relevance judge passes, the length check passes. The original three-scorer suite would have let it through. That is the hallucination class I cared about."
+
+**Then the fix:**
+> "So I added a reference-based fact check: the lab weather tool is a stub that always returns 'It might be cloudy in {city}', so 'cloudy' is the ground truth. The answer must state it. Now that control is caught — and only by the fact check. The means drop to 0.63, 0.57, 0.63, 0.88, which is the point: a high mean is not evidence, a caught control is."
 
 **Then the live alias bug:**
 > "The same pilot caught a real false negative: the model wrote 'New York City' for expected 'NYC' and the literal matcher returned `False`. I fixed it with an alias map and whole-word matching. Same lesson as the earlier U+202F and 'sf.' bugs: deterministic scorers need normalization and aliases, not just a substring check."
 
 **Honest blind spot:**
-> "A plausible hallucination that names the right city with a wrong fact would still pass. That needs a factuality check or human labels — the next experiment."
+> "A deterministic fact check still misses an answer that says 'cloudy — and also 95 degrees and sunny.' Catching contradictions needs an LLM correctness judge or human labels — that is the next experiment."
 
 ---
 
 ## Closing (~30 sec)
 
-> "Eight experiments now: keyless tracing, manual spans, multi-turn sessions, failures you can diagnose, latency and cost from the trace metadata, and an evaluation harness that catches planted defects. The artifact is a repeatable measurement loop — the lab book, the findings doc, and the runnable scripts. The limits are explicit: toy agent, 11 answers, controls only in the pilot so far. Full-run controls and A/B comparisons are the next experiment."
+> "Nine experiments now: keyless tracing, manual spans, multi-turn sessions, failures you can diagnose, latency and cost from the trace metadata, and an evaluation harness that catches planted defects — including a right-city-wrong-fact hallucination the original suite missed. The artifact is a repeatable measurement loop — the lab book, the findings doc, and the runnable scripts. The limits are explicit: toy agent, 11 answers, controls only in the pilot so far. Full-run controls and A/B comparisons are the next experiment."
 
 Then open Q&A with `DEMO_DECK.html` slide 7 up and the Traces tab still open.
 

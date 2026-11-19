@@ -56,7 +56,7 @@
 - **The harness discriminates.** The clean records stay green while every planted defect is flagged — the missing evidence from exp 007's uniform 1.0.
 - **The checks are complementary.** The deterministic city check caught 3/4 controls; the length check caught the one the city check could not (over-length); the LLM judge independently flagged the same 3 semantic failures.
 - **The alias fix closes a real false negative.** The model expands "NYC" to "New York City", so literal token matching was wrong. Whole-word aliases fix it without weakening the check.
-- **Known blind spot:** a plausible hallucination that names the right city with a wrong fact would pass the current deterministic checks (and may pass the relevance judge). That needs a factuality scorer or human labels — recorded as next work.
+- **Known blind spot:** a plausible hallucination that names the right city with a wrong fact would pass the current deterministic checks (and may pass the relevance judge). That needs a factuality scorer or human labels — [exp 009](009-factuality-check.md) closes it with a reference-based fact check and proves the gap with a fifth control.
 
 ## 6. Learnings & decisions
 - A high mean is not evidence; planted known-bad controls turn "all 1.0" into a demonstrated capability.
@@ -65,7 +65,7 @@
 
 ## 7. Next actions
 - [ ] Add the controls to the full run and keep them as a standing regression set (F-014).
-- [ ] Add a factuality/hallucination check for right-city-wrong-fact answers.
+- [x] Add a factuality/hallucination check for right-city-wrong-fact answers. → completed in [experiment 009](009-factuality-check.md).
 - [ ] Use the suite for prompt/model A/B comparisons (F-014).
 
 ## 8. Reproducibility checklist

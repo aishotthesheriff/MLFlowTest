@@ -31,7 +31,7 @@ EXPECTED_TRACES = [
     "054cbbc9", "0cb5f6d2", "e07c3271", "66e408aa", "6f99921d",
     "cbd09f84", "3dbea41e", "193c937a",
 ]
-EXPECTED_SCORERS = {"relevance_to_query", "answers_expected_city", "response_length"}
+EXPECTED_SCORERS = {"relevance_to_query", "answers_expected_city", "answers_expected_fact", "response_length"}
 
 failures = []
 try:
@@ -86,5 +86,5 @@ Ready. Run of show (see DEMO_SCRIPT.md):
   3  .venv/bin/python trace_multi_turn.py       # one session, three turns
   4  .venv/bin/python trace_errors.py           # error signatures
   5  .venv/bin/python analyze_trace_metrics.py  # latency / tokens / cost
-     .venv/bin/python evaluate_traces.py --pilot --with-controls  # clean + planted controls
+     .venv/bin/python evaluate_traces.py --pilot --with-controls  # 3 clean + 5 planted controls
 EOF

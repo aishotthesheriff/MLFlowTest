@@ -8,6 +8,7 @@ and scored with:
 
   - relevance_to_query  built-in LLM judge (Databricks managed judge on this workspace)
   - answers_expected_city  deterministic custom @scorer (user outcome)
+  - answers_expected_fact  deterministic custom @scorer (ground-truth fact stated)
   - response_length  deterministic built-in guardrail (< 300 chars)
 
 Usage:
@@ -30,7 +31,12 @@ from mlflow.entities import Feedback
 from mlflow.genai.scorers import RelevanceToQuery, ResponseLength, scorer
 
 EXCLUDED_SCENARIOS = {"error_tracing"}  # no usable final answer; evaluated separately in exp 005
-SCORER_NAMES = ("answers_expected_city", "relevance_to_query", "response_length")
+SCORER_NAMES = (
+    "answers_expected_city",
+    "answers_expected_fact",
+    "relevance_to_query",
+    "response_length",
+)
 
 # Abbreviations the agent expands in its answers ("NYC" -> "New York City").
 CITY_ALIASES = {
@@ -38,21 +44,41 @@ CITY_ALIASES = {
     "san francisco": ("san francisco", "sf"),
 }
 
+# The lab weather tool is a stub: `get_weather` always returns
+# "It might be cloudy in {city}". That string is the ground truth for weather
+# turns, so a correct answer must state "cloudy" (or a close synonym).
+FACT_ALIASES = {
+    "cloudy": ("cloudy", "clouds", "overcast"),
+}
+
+
+def _normalize(text) -> str:
+    """Lowercase and collapse whitespace (answers contain U+202F in 'San Francisco')."""
+    return re.sub(r"\s+", " ", str(text or "")).lower()
+
 
 def city_mentioned(expected: str, text: str) -> bool:
     """True if any known alias for the expected city appears as a whole word."""
-    key = expected.strip().lower()
+    key = _normalize(expected).strip()
     aliases = CITY_ALIASES.get(key, (key,))
-    return any(re.search(rf"\b{re.escape(alias)}\b", text) for alias in aliases)
+    norm = _normalize(text)
+    return any(re.search(rf"\b{re.escape(alias)}\b", norm) for alias in aliases)
+
+
+def fact_stated(expected: str, text: str) -> bool:
+    """True if any known phrasing of the expected fact appears as a whole word."""
+    key = _normalize(expected).strip()
+    aliases = FACT_ALIASES.get(key, (key,))
+    norm = _normalize(text)
+    return any(re.search(rf"\b{re.escape(alias)}\b", norm) for alias in aliases)
 
 
 @scorer(name="answers_expected_city", description="Answer names the city the user asked about.")
 def answers_expected_city(inputs, outputs, expectations):
     """Deterministic user-outcome check: the answer is about the requested city."""
     expected = str((expectations or {}).get("expected_city", "")).strip().lower()
-    # Normalize Unicode spaces (answers contain U+202F narrow no-break space in "San Francisco").
-    text = re.sub(r"\s+", " ", str(outputs or "")).lower()
-    if not expected or not text:
+    text = str(outputs or "")
+    if not expected or not text.strip():
         return Feedback(value=False, rationale="missing expected_city or outputs")
     hit = city_mentioned(expected, text)
     return Feedback(
@@ -61,10 +87,31 @@ def answers_expected_city(inputs, outputs, expectations):
     )
 
 
+@scorer(name="answers_expected_fact", description="Answer states the known ground-truth fact.")
+def answers_expected_fact(inputs, outputs, expectations):
+    """Reference-based factuality check against the tool-derived ground truth.
+
+    Returns None (no assessment) when the record has no known fact, e.g. the
+    cross-turn recall question, so it is skipped rather than failed.
+    """
+    expected = str((expectations or {}).get("expected_fact", "")).strip().lower()
+    if not expected:
+        return None
+    text = str(outputs or "")
+    hit = fact_stated(expected, text)
+    return Feedback(
+        value=bool(hit),
+        rationale=(
+            f"expected fact {expected!r} {'stated' if hit else 'not stated'} in answer"
+        ),
+    )
+
+
 def build_scorers():
     return [
         RelevanceToQuery(),
         answers_expected_city,
+        answers_expected_fact,
         ResponseLength(max_length=300, unit="chars"),
     ]
 
@@ -108,16 +155,25 @@ def records_from_traces(traces):
 
         # Known facts from the lab conversations: only NYC and SF were asked about.
         expected_city = "NYC" if ("nyc" in question.lower() or "new york" in question.lower()) else "San Francisco"
+        turn = root.inputs.get("turn")
+        # The stub weather tool always returns "It might be cloudy in {city}", so
+        # that is the ground truth for weather turns. The cross-turn recall turn
+        # has no tool-derived fact and is skipped by the fact check.
+        expected_fact = None if (scenario == "multi_turn" and turn == 3) else "cloudy"
+        expectations = {"expected_city": expected_city}
+        if expected_fact:
+            expectations["expected_fact"] = expected_fact
         records.append({
             "inputs": {"question": question},
             "outputs": str(answer),
-            "expectations": {"expected_city": expected_city},
+            "expectations": expectations,
         })
         metas.append({
             "trace_id": trace.info.trace_id,
             "scenario": scenario,
-            "turn": root.inputs.get("turn"),
+            "turn": turn,
             "expected_city": expected_city,
+            "expected_fact": expected_fact,
             "answer": str(answer),
         })
     return records, metas
@@ -130,19 +186,23 @@ def build_controls():
         ("off_topic", "I can help you write a Python function to sort a list."),
         ("over_length", "San Francisco weather update: " + "cloudy with a light breeze; " * 20),
         ("refusal", "I'm sorry, but I can't help with weather questions."),
+        # Right city, plausible tone, no hallucinated city or length problem:
+        # only the ground-truth fact check can catch this one.
+        ("right_city_wrong_fact", "The weather in San Francisco is sunny and 75F with clear skies."),
     ]
     records, metas = [], []
     for name, answer in controls:
         records.append({
             "inputs": {"question": "What is the weather in San Francisco?"},
             "outputs": answer,
-            "expectations": {"expected_city": "San Francisco"},
+            "expectations": {"expected_city": "San Francisco", "expected_fact": "cloudy"},
         })
         metas.append({
             "trace_id": f"control:{name}",
             "scenario": "control",
             "turn": None,
             "expected_city": "San Francisco",
+            "expected_fact": "cloudy",
             "answer": answer,
             "control": name,
         })
@@ -191,22 +251,29 @@ def report(result, metas, indices, label):
         if meta.get("scenario") == "control":
             continue
         verdicts = " ".join(f"{n}={df.iloc[row_i].get(n + '/value')}" for n in SCORER_NAMES)
+        fact = meta.get("expected_fact") or "-"
         print(f"    {meta['trace_id']} scenario={meta['scenario']} turn={meta['turn']} "
-              f"expected={meta['expected_city']} | {verdicts}")
+              f"expected={meta['expected_city']} fact={fact} | {verdicts}")
         print(f"      answer: {meta['answer'][:110]}")
 
     # result.passed inspects every "<name>/value" column, including expectation
     # columns, so it can report False for non-boolean ground truth. Count only
     # the actual scorer verdicts here; zero/False are genuine negatives.
-    print("\n  Scorer-only verdict counts (missing/errored reported separately):")
+    print("\n  Scorer-only verdict counts (skipped/errored reported separately):")
     for name in SCORER_NAMES:
         values = [df.iloc[i].get(name + "/value") for i in range(len(df))]
         errors = [df.iloc[i].get(name + "/error_message") for i in range(len(df))]
         passed = sum(_is_pass(v) for v in values)
         failed = sum(_is_fail(v) for v in values)
-        missing = len(values) - passed - failed
+        skipped = (
+            sum(1 for result_i in indices if not metas[result_i].get("expected_fact"))
+            if name == "answers_expected_fact"
+            else 0
+        )
+        missing = len(values) - passed - failed - skipped
         errored = sum(e is not None and str(e).lower() != "nan" for e in errors)
-        print(f"    {name}: passed={passed} failed={failed} unscored={missing} errored={errored}")
+        print(f"    {name}: passed={passed} failed={failed} skipped={skipped} "
+              f"unscored={missing} errored={errored}")
 
     clean_rows = [i for i, result_i in enumerate(indices) if metas[result_i].get("scenario") != "control"]
     control_rows = [i for i, result_i in enumerate(indices) if metas[result_i].get("scenario") == "control"]
@@ -218,24 +285,38 @@ def report(result, metas, indices, label):
             parts = []
             for name in SCORER_NAMES:
                 values = [df.iloc[i].get(name + "/value") for i in rows]
+                # The fact check is skipped on records without a tool-derived fact.
+                applicable = [
+                    v for i, v in zip(rows, values)
+                    if not (name == "answers_expected_fact"
+                            and not metas[indices[i]].get("expected_fact"))
+                ]
                 if group == "controls":
-                    parts.append(f"{name}: flagged {sum(_is_fail(v) for v in values)}/{len(rows)}")
+                    parts.append(f"{name}: flagged {sum(_is_fail(v) for v in applicable)}/{len(applicable)}")
                 else:
-                    parts.append(f"{name}: {sum(_is_pass(v) for v in values)}/{len(rows)} passed")
+                    parts.append(f"{name}: {sum(_is_pass(v) for v in applicable)}/{len(applicable)} passed")
             print(f"    {group:<9} n={len(rows):<2} " + " | ".join(parts))
 
         print("\n  Known-bad controls (each should be caught by >=1 scorer):")
         caught_total = 0
+        fact_only = []
         for row_i in control_rows:
             meta = metas[indices[row_i]]
-            verdicts, caught = [], False
+            verdicts, caught, caught_by = [], False, []
             for name in SCORER_NAMES:
                 value = df.iloc[row_i].get(name + "/value")
                 verdicts.append(f"{name}={value}")
-                caught = caught or _is_fail(value)
+                if _is_fail(value):
+                    caught = True
+                    caught_by.append(name)
             caught_total += int(caught)
-            print(f"    {meta['trace_id']:<24} caught={caught} | " + " ".join(verdicts))
+            if caught_by == ["answers_expected_fact"]:
+                fact_only.append(meta["control"])
+            print(f"    {meta['trace_id']:<32} caught={caught} | " + " ".join(verdicts))
         print(f"    controls caught: {caught_total}/{len(control_rows)}")
+        if fact_only:
+            print("    caught only by answers_expected_fact (the old 3-scorer suite "
+                  f"would have passed): {', '.join(fact_only)}")
 
 
 def main() -> int:
