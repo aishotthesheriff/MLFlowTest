@@ -82,7 +82,7 @@
 - Registering a scorer does not enable monitoring — the three configurations are available for repeatable evaluation but no automatic trace evaluation was turned on (F-013 remains open).
 
 ## 7. Next actions
-- [ ] Add the five tool-call cases and all three verdicts to F-014's standing A/B regression set.
+- [x] Add the five tool-call cases and all three verdicts to F-014's standing A/B regression set — baseline verdicts are in `regression_suite.py` (2026-11-19).
 - [ ] Add a legitimate failure-plus-retry control to check that the efficiency judge does not punish recovery (F-016).
 - [ ] Run a larger repetition count on borderline cases before treating judge verdicts as a stability guarantee.
 

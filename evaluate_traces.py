@@ -40,6 +40,23 @@ SCORER_NAMES = (
     "response_length",
 )
 
+# Standing output-control set (F-014). Each planted answer must be caught by at
+# least one scorer. CONTROL_NAMES is the stable key set consumed by the
+# regression suite, so this stays the single source of truth.
+CONTROLS = (
+    ("wrong_city", "The current weather in New York City is cloudy."),
+    ("off_topic", "I can help you write a Python function to sort a list."),
+    ("over_length", "San Francisco weather update: " + "cloudy with a light breeze; " * 20),
+    ("refusal", "I'm sorry, but I can't help with weather questions."),
+    # Right city, plausible tone, no hallucinated city or length problem:
+    # only the ground-truth fact check can catch this one.
+    ("right_city_wrong_fact", "The weather in San Francisco is sunny and 75F with clear skies."),
+    # States the expected fact AND contradicts it. The deterministic fact check
+    # sees "cloudy" and passes; only the self-consistency judge can catch it.
+    ("self_contradiction", "It might be cloudy in San Francisco, but it's also sunny, 95F, and clear."),
+)
+CONTROL_NAMES = tuple(name for name, _answer in CONTROLS)
+
 # Rubric judge: no expected facts are maintained. It only asks whether the answer
 # agrees with itself, so it also works when ground truth is unknown.
 SELF_CONSISTENCY_GUIDELINES = [
@@ -200,20 +217,8 @@ def records_from_traces(traces):
 
 def build_controls():
     """Planted known-bad records; each must be caught by at least one scorer."""
-    controls = [
-        ("wrong_city", "The current weather in New York City is cloudy."),
-        ("off_topic", "I can help you write a Python function to sort a list."),
-        ("over_length", "San Francisco weather update: " + "cloudy with a light breeze; " * 20),
-        ("refusal", "I'm sorry, but I can't help with weather questions."),
-        # Right city, plausible tone, no hallucinated city or length problem:
-        # only the ground-truth fact check can catch this one.
-        ("right_city_wrong_fact", "The weather in San Francisco is sunny and 75F with clear skies."),
-        # States the expected fact AND contradicts it. The deterministic fact check
-        # sees "cloudy" and passes; only the self-consistency judge can catch it.
-        ("self_contradiction", "It might be cloudy in San Francisco, but it's also sunny, 95F, and clear."),
-    ]
     records, metas = [], []
-    for name, answer in controls:
+    for name, answer in CONTROLS:
         records.append({
             "inputs": {"question": "What is the weather in San Francisco?"},
             "outputs": answer,

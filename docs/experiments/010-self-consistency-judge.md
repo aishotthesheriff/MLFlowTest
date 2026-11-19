@@ -79,8 +79,8 @@
 ## 7. Next actions
 - [ ] Compare `Guidelines` against MLflow's `Correctness` with `expected_facts` on paraphrase/contradiction cases.
 - [ ] Add a contradiction control with the claims split across two sentences and one with an implication, to probe judge robustness.
-- [ ] Move all six controls into the full run as a standing regression set (F-014).
-- [ ] Use the suite for prompt/model A/B comparisons (F-014).
+- [x] Move all six controls into the full run as a standing regression set (F-014) — exposed as `evaluate_traces.CONTROL_NAMES` for the regression suite (2026-11-19).
+- [x] Use the suite for prompt/model A/B comparisons (F-014) — `regression_suite.py --run/--compare` (2026-11-19).
 
 ## 8. Reproducibility checklist
 - [x] Commands and config recorded

@@ -57,6 +57,19 @@ python evaluate_traces.py --pilot # 3-record scorer pilot (use --register to per
 python evaluate_traces.py        # full GenAI evaluation over persisted traces
 ```
 
+### Standing A/B regression set (F-014)
+
+```bash
+python regression_suite.py --summary    # the 6 output controls + 5 tool cases + 3 verdicts
+python regression_suite.py              # offline: check artifacts cover the set and match baseline
+python regression_suite.py --run baseline        # re-run both evaluators; snapshot results (judge calls)
+# change prompt/model, then:
+python regression_suite.py --run variant_b
+python regression_suite.py --compare docs/demo/regression/baseline.json docs/demo/regression/variant_b.json
+```
+
+The case lists come from `evaluate_traces.py` and `evaluate_tool_calls.py`, so the suite has no duplicate copy to drift. `--validate` fails if coverage or the exp-012 verdict baseline changes; use `--compare` to inspect intended A/B differences.
+
 ## Notes
 
 - **Databricks auth:** set `DATABRICKS_HOST` + `DATABRICKS_TOKEN` in `.env`, or configure a profile in `~/.databrickscfg` (used here).

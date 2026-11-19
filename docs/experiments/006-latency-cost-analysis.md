@@ -92,7 +92,7 @@
 
 ## 7. Next actions
 - [ ] Add a `status` split (OK vs ERROR) to the summary to avoid mixing fast failures with successful runs (informs F-013).
-- [ ] Use this script as the measurement harness for prompt/model A/B comparisons (F-014).
+- [ ] Run the prompt/model A/B comparison itself (F-014) — `regression_suite.py` now orchestrates the evaluation; this script remains the latency/cost lens for variants.
 - [ ] Capture per-span token/cost (not just trace totals) if finer attribution is needed.
 - [ ] Standardize scenario/status tags across all scripts so every trace is groupable (F-010).
 

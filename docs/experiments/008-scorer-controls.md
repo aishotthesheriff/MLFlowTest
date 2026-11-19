@@ -64,9 +64,9 @@
 - Report clean and control rows separately so a reviewer can see both the pass rate and the catch rate.
 
 ## 7. Next actions
-- [ ] Add the controls to the full run and keep them as a standing regression set (F-014).
+- [x] Add the controls to the full run and keep them as a standing regression set (F-014) — `regression_suite.py --run` passes `--with-controls` (2026-11-19).
 - [x] Add a factuality/hallucination check for right-city-wrong-fact answers. → completed in [experiment 009](009-factuality-check.md).
-- [ ] Use the suite for prompt/model A/B comparisons (F-014).
+- [x] Use the suite for prompt/model A/B comparisons (F-014) — `regression_suite.py --run/--compare` (2026-11-19).
 
 ## 8. Reproducibility checklist
 - [x] Commands and config recorded

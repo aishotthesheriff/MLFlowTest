@@ -214,7 +214,7 @@ Expected: `Session ID: lab-f007-…` and three trace IDs (tool error, unhandled 
 
 ## Closing (~30 sec)
 
-> "Twelve experiments now: keyless tracing, manual spans, multi-turn sessions, failures you can diagnose, latency and cost from the trace metadata, an evaluation harness that catches planted defects — including a right-city-wrong-fact hallucination and a self-contradiction the old suite missed — and tool-call evidence you can prove and then judge. The artifact is a repeatable measurement loop — the lab book, the findings doc, and the runnable scripts. The limits are explicit: toy agent, 11 answers, controls only in the pilot, and five unambiguous tool traces. Full-run controls, legitimate retries, and A/B comparisons are the next experiments."
+> "Twelve experiments now: keyless tracing, manual spans, multi-turn sessions, failures you can diagnose, latency and cost from the trace metadata, an evaluation harness that catches planted defects — including a right-city-wrong-fact hallucination and a self-contradiction the old suite missed — and tool-call evidence you can prove and then judge. The artifact is a repeatable measurement loop — the lab book, the findings doc, and the runnable scripts. The limits are explicit: toy agent, 11 answers, the recorded controls ran in the pilot, and five unambiguous tool traces. A standing regression suite now checks the full case set offline and can snapshot/compare variants; legitimate retries and an actual A/B run are the next experiments."
 
 Then open Q&A with `DEMO_DECK.html` slide 7 up and the Traces tab still open.
 

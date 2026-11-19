@@ -75,8 +75,8 @@
 ## 7. Next actions
 - [x] Add a self-contradiction check for answers that state the right fact and contradict it. → completed in [experiment 010](010-self-consistency-judge.md) with a scoped `Guidelines` rubric judge.
 - [ ] Add an LLM `Correctness` check with `expected_facts` for paraphrase robustness, and compare it against the deterministic check.
-- [ ] Move all five controls into the full run as a standing regression set (F-014).
-- [ ] Use the suite for prompt/model A/B comparisons (F-014).
+- [x] Move the controls into the full run as a standing regression set (F-014) — all six are now `evaluate_traces.CONTROL_NAMES` (2026-11-19).
+- [x] Use the suite for prompt/model A/B comparisons (F-014) — `regression_suite.py --run/--compare` (2026-11-19).
 
 ## 8. Reproducibility checklist
 - [x] Commands and config recorded

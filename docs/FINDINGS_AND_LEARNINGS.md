@@ -108,13 +108,14 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 7. **Validate scorers before trusting metrics:** inspect row-level values, rationales, and error columns; test known-good and known-bad inputs; don't rely on a high mean or a green run alone.
 8. **Mix deterministic and LLM scorers:** cheap checks catch text-normalization bugs; the judge covers semantic relevance that code can't.
 9. **Segment before aggregating:** scenario and status splits prevent fast-failing error traces from distorting latency/cost summaries.
-10. **Reuse the harness:** `analyze_trace_metrics.py` and `evaluate_traces.py` are the standing measurement tools for later A/B and monitoring work.
+10. **Reuse the harness:** `analyze_trace_metrics.py`, `evaluate_traces.py` and `evaluate_tool_calls.py` are the standing measurement tools; `regression_suite.py` orchestrates them for later A/B and monitoring work.
 11. **Small samples limit claims:** all lab answers are short weather replies from one toy agent; 11/11 passes demonstrate the pipeline works, not that the agent is production-ready.
 12. **Plant known-bad controls:** a clean 1.0 means nothing without a demonstrated catch rate; add controls to the harness and report clean vs. control rows separately.
 13. **Relevance is not truth:** if the expected fact is known, check it directly; a relevance or fluency judge will happily pass a confident, on-topic hallucination.
 14. **Scope a rubric judge to one property:** a judge told to "check consistency" will judge relevance too unless you tell it what to ignore. Name the property, list what to ignore, and give it a pass rule for answers with nothing to check.
 15. **Verify evidence before judging it:** fetch traces back by ID and assert names, arguments, counts, outcomes, and advertised schemas before writing a manifest; a downstream judge can only be trusted if the span underneath it is trusted. (exp 011)
 16. **Keep scorer properties separate and join results by trace ID:** correctness and efficiency answer different questions, and a multi-run comparison must join on `trace_id` (with a scenario tag re-check) rather than row order. Normalize `error`/`missing` separately from `no`. (exp 012)
+17. **Define a regression set by importing, not copying:** the case and scorer lists already lived in the eval scripts, so `regression_suite.py` imports them as the single source of truth and validates the checked-in artifact against the exp-012 verdict baseline. A fourth copy would have drifted silently. (F-014)
 
 ---
 
@@ -141,7 +142,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 Ordered by the lab goals set 2026-11-19 — reusable demo, learning breadth, judge trust (see [LAB_BOOK.md](LAB_BOOK.md) §6):
 
 - [x] **(reusable demo, done 2026-11-19)** Standardize tags across every script (F-010): `lab_tags.py` supplies `lab_book`, `scenario`, `env`, `git_sha` to all experiment scripts.
-- **(reusable demo)** Move the known-bad controls from the pilot into the full run as a standing regression set (F-014) and promote the exp 011/012 tool-call cases with all three verdicts into it.
+- [x] **(reusable demo, done 2026-11-19)** Standing A/B regression set (F-014): `regression_suite.py` covers the 6 output controls, 5 tool cases and 3 verdicts by importing the eval scripts' constants; `--validate` checks coverage/baseline offline, `--run LABEL` snapshots a variant, `--compare A B` diffs verdicts. Actual endpoint/prompt A/B runs remain future work.
 - [x] **(reusable demo, done 2026-11-19)** Harden the environment: dependency versions are pinned in `requirements.txt` + `requirements.lock.txt`, with `./rebuild_venv.sh` verified on a clean Python 3.15.2 venv (F-012).
 - **(learning breadth)** Explore RAG/retrieval tracing (F-006) or another named autolog integration (F-004) once demo work is done.
 - **(judge trust)** Add a legitimate failure-plus-retry control to check the efficiency judge for false positives on recovery (F-016).

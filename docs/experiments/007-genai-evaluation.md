@@ -79,7 +79,7 @@
 
 ## 7. Next actions
 - [x] Add a known-bad case set (wrong city, refusal, off-topic) to prove non-uniform scoring in the full harness (F-014). → completed in [experiment 008](008-scorer-controls.md).
-- [ ] Use this suite as the measurement harness for prompt/model A/B comparisons (F-014).
+- [x] Use this suite as the measurement harness for prompt/model A/B comparisons (F-014) — `regression_suite.py` now orchestrates it (2026-11-19).
 - [ ] Consider human-labeled examples and judge alignment before trusting subjective scores (F-009 follow-up).
 - [ ] Feed `status = 'ERROR'` traces into a separate error-quality evaluation (F-013).
 
