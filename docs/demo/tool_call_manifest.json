@@ -1,0 +1,98 @@
+{
+  "experiment": "/Shared/my-first-trace",
+  "experiment_id": "1675992194464286",
+  "lab_book": "F-015",
+  "session_id": "lab-f011-1795112059",
+  "user_request": "What is the current weather and cloud cover in SF?",
+  "advertised_tools": [
+    "get_weather",
+    "get_temperature"
+  ],
+  "cases": [
+    {
+      "case": "tool_happy",
+      "trace_id": "tr-218c33b979b86c0e958d546aefa23a64",
+      "advertised_tools": [
+        "get_temperature",
+        "get_weather"
+      ],
+      "tool_calls": [
+        {
+          "name": "get_weather",
+          "city": "SF",
+          "status": "OK",
+          "has_content": true
+        }
+      ]
+    },
+    {
+      "case": "tool_no_call",
+      "trace_id": "tr-8f166650ff924e86b7726829d3c81911",
+      "advertised_tools": [
+        "get_temperature",
+        "get_weather"
+      ],
+      "tool_calls": []
+    },
+    {
+      "case": "tool_wrong_tool",
+      "trace_id": "tr-1dd34cbcfd3fd9b4fa0231314015da11",
+      "advertised_tools": [
+        "get_temperature",
+        "get_weather"
+      ],
+      "tool_calls": [
+        {
+          "name": "get_temperature",
+          "city": "SF",
+          "status": "OK",
+          "has_content": true
+        }
+      ]
+    },
+    {
+      "case": "tool_wrong_args",
+      "trace_id": "tr-9f9dab49618b133d824747d8515b0104",
+      "advertised_tools": [
+        "get_temperature",
+        "get_weather"
+      ],
+      "tool_calls": [
+        {
+          "name": "get_weather",
+          "city": "NYC",
+          "status": "OK",
+          "has_content": true
+        }
+      ]
+    },
+    {
+      "case": "tool_retry_storm",
+      "trace_id": "tr-ba8b262cff37fa530c2d4a7291b87d82",
+      "advertised_tools": [
+        "get_temperature",
+        "get_weather"
+      ],
+      "tool_calls": [
+        {
+          "name": "get_weather",
+          "city": "SF",
+          "status": "OK",
+          "has_content": true
+        },
+        {
+          "name": "get_weather",
+          "city": "SF",
+          "status": "OK",
+          "has_content": true
+        },
+        {
+          "name": "get_weather",
+          "city": "SF",
+          "status": "OK",
+          "has_content": true
+        }
+      ]
+    }
+  ]
+}
