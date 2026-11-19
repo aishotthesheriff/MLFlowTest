@@ -20,6 +20,8 @@ import time
 
 from dotenv import load_dotenv
 
+from lab_tags import base_tags
+
 
 TURNS = [
     "What is the weather in SF?",
@@ -68,12 +70,10 @@ def main() -> int:
         with mlflow.start_span(name=f"turn_{turn_number}", span_type="CHAIN") as span:
             mlflow.update_current_trace(
                 session_id=session_id,
-                tags={
-                    "lab_book": "F-005",
-                    "scenario": "multi_turn",
-                    "session_id": session_id,
-                    "turn": str(turn_number),
-                },
+                tags=base_tags(
+                    "F-005", "multi_turn",
+                    session_id=session_id, turn=str(turn_number),
+                ),
             )
             result = agent.invoke({"messages": history})
             answer = result["messages"][-1].content

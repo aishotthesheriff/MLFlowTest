@@ -21,6 +21,8 @@ import sys
 
 from dotenv import load_dotenv
 
+from lab_tags import base_tags
+
 
 CITY_NAMES = {"SF": "San Francisco", "NYC": "New York"}
 
@@ -76,11 +78,9 @@ def main() -> int:
                   attributes={"component": "application_boundary", "lab_experiment": "F-003"})
     def run_weather_assistant(city: str) -> str:
         """Application boundary: capture the full request/response explicitly."""
-        mlflow.update_current_trace(tags={
-            "lab_book": "F-003",
-            "scenario": "manual_spans",
-            "model_endpoint": endpoint,
-        })
+        mlflow.update_current_trace(tags=base_tags(
+            "F-003", "manual_spans", model_endpoint=endpoint,
+        ))
         prompt = build_user_prompt(city)
         result = agent.invoke({"messages": [("user", prompt)]})
         answer = result["messages"][-1].content

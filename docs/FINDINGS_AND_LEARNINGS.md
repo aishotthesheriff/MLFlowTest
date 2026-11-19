@@ -140,7 +140,8 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 
 Ordered by the lab goals set 2026-11-19 — reusable demo, learning breadth, judge trust (see [LAB_BOOK.md](LAB_BOOK.md) §6):
 
-- **(reusable demo)** Standardize tags across every script (F-010), then move the known-bad controls from the pilot into the full run as a standing regression set (F-014) and promote the exp 011/012 tool-call cases with all three verdicts into it.
+- [x] **(reusable demo, done 2026-11-19)** Standardize tags across every script (F-010): `lab_tags.py` supplies `lab_book`, `scenario`, `env`, `git_sha` to all experiment scripts.
+- **(reusable demo)** Move the known-bad controls from the pilot into the full run as a standing regression set (F-014) and promote the exp 011/012 tool-call cases with all three verdicts into it.
 - [x] **(reusable demo, done 2026-11-19)** Harden the environment: dependency versions are pinned in `requirements.txt` + `requirements.lock.txt`, with `./rebuild_venv.sh` verified on a clean Python 3.15.2 venv (F-012).
 - **(learning breadth)** Explore RAG/retrieval tracing (F-006) or another named autolog integration (F-004) once demo work is done.
 - **(judge trust)** Add a legitimate failure-plus-retry control to check the efficiency judge for false positives on recovery (F-016).

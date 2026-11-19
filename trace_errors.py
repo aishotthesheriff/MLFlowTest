@@ -19,6 +19,8 @@ import time
 
 from dotenv import load_dotenv
 
+from lab_tags import base_tags
+
 
 def main() -> int:
     load_dotenv()
@@ -48,12 +50,9 @@ def main() -> int:
     model = ChatDatabricks(model=endpoint, temperature=0.1, max_tokens=500)
 
     def tag_trace(case: str) -> None:
-        mlflow.update_current_trace(tags={
-            "lab_book": "F-007",
-            "scenario": "error_tracing",
-            "session_id": session_id,
-            "case": case,
-        })
+        mlflow.update_current_trace(tags=base_tags(
+            "F-007", "error_tracing", session_id=session_id, case=case,
+        ))
 
     # --- Case A: tool raises, agent handles it ---
     @tool

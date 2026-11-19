@@ -62,6 +62,7 @@ python evaluate_traces.py        # full GenAI evaluation over persisted traces
 - **Databricks auth:** set `DATABRICKS_HOST` + `DATABRICKS_TOKEN` in `.env`, or configure a profile in `~/.databrickscfg` (used here).
 - **LLM:** the sample uses `ChatDatabricks` against a Foundation Model endpoint (`databricks-gpt-oss-20b` by default). Change it via `DATABRICKS_MODEL_ENDPOINT` in `.env`. No external LLM key needed.
 - `mlflow.set_tracking_uri("databricks")` sends traces to your Databricks workspace (not a local MLflow server).
+- **Trace tags:** every experiment script sets `lab_book`, `scenario`, `env` (default `local`; override with `LAB_ENV`) and `git_sha` via `lab_tags.py`. Scenario-specific tags (`tool_case`, `case`, `turn`, `session_id`, `model_endpoint`) are kept. Filter in the Traces UI with e.g. `tags.scenario = 'tool_calls'`.
 - **Dependencies are pinned (F-012, done 2026-11-19).** `requirements.txt` pins the six direct dependencies; `requirements.lock.txt` pins the full 160-package working set. `./rebuild_venv.sh` installs the lock with `--no-deps` and smoke-checks imports/versions. Verified on a fresh Python 3.15.2 venv. Details and known warnings are below.
 
 ## Environment notes & troubleshooting

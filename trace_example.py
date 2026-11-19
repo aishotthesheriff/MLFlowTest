@@ -23,6 +23,8 @@ import sys
 
 from dotenv import load_dotenv
 
+from lab_tags import base_tags
+
 
 def main() -> int:
     load_dotenv()
@@ -59,6 +61,11 @@ def main() -> int:
     # Flush the async trace queue so this run is persisted before we capture its ID.
     mlflow.flush_trace_async_logging()
     trace_id = mlflow.get_last_active_trace_id()
+    if trace_id:
+        # Autolog owns the root span here, so tag the finished trace by ID
+        # instead of adding a wrapper span that would change its structure.
+        for key, value in base_tags("F-001", "baseline").items():
+            mlflow.set_trace_tag(trace_id, key, value)
 
     print(f"Model endpoint: {endpoint}")
     print("Agent response:")

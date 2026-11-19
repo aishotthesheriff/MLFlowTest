@@ -28,6 +28,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from lab_tags import base_tags
+
 USER_REQUEST = "What is the current weather and cloud cover in SF?"
 EXPECTED_TOOLS = ("get_weather", "get_temperature")
 MANIFEST_PATH = Path("docs/demo/tool_call_manifest.json")
@@ -194,12 +196,9 @@ def main() -> int:
         model = ScriptedChatModel(messages=iter(_script(case)))
         agent = create_agent(model, tools)
         with mlflow.start_span(name=f"tool_case_{case}", span_type="CHAIN") as root:
-            mlflow.update_current_trace(tags={
-                "lab_book": "F-015",
-                "scenario": "tool_calls",
-                "tool_case": case,
-                "session_id": session_id,
-            })
+            mlflow.update_current_trace(tags=base_tags(
+                "F-015", "tool_calls", tool_case=case, session_id=session_id,
+            ))
             result = agent.invoke({"messages": [("user", USER_REQUEST)]})
             answer = result["messages"][-1].content
             root.set_inputs({"tool_case": case, "user": USER_REQUEST})
@@ -315,7 +314,7 @@ def main() -> int:
     payload = {
         "experiment": experiment_name,
         "experiment_id": experiment.experiment_id,
-        "lab_book": "F-015",
+        **base_tags("F-015", "tool_calls"),
         "session_id": session_id,
         "user_request": USER_REQUEST,
         "advertised_tools": list(EXPECTED_TOOLS),
