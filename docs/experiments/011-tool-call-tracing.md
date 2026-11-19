@@ -69,7 +69,7 @@
 ## 7. Next actions
 - [ ] Experiment 012: judge these same five traces with two correctness modes and an efficiency judge.
 - [ ] Add the five tool-call cases to F-014's standing A/B regression set alongside the six output-level controls.
-- [ ] Explore a failure-plus-retry case, where retries are legitimate, as an efficiency-judge control (F-015).
+- [ ] Explore a failure-plus-retry case, where retries are legitimate, as an efficiency-judge control (F-016).
 
 ## 8. Reproducibility checklist
 - [x] Commands and config recorded

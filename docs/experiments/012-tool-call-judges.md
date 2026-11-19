@@ -83,7 +83,7 @@
 
 ## 7. Next actions
 - [ ] Add the five tool-call cases and all three verdicts to F-014's standing A/B regression set.
-- [ ] Add a legitimate failure-plus-retry control to check that the efficiency judge does not punish recovery (F-015).
+- [ ] Add a legitimate failure-plus-retry control to check that the efficiency judge does not punish recovery (F-016).
 - [ ] Run a larger repetition count on borderline cases before treating judge verdicts as a stability guarantee.
 
 ## 8. Reproducibility checklist

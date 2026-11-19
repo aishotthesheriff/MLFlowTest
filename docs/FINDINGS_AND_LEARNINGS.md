@@ -137,9 +137,11 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 
 ## 5. Still open
 
-- Harden the environment: pin dependency versions so the `--no-deps` recipe is reproducible (F-012).
-- Move the known-bad controls from the pilot into the full run and keep them as a standing regression set (F-014); add an LLM `Correctness` check with `expected_facts` for paraphrase robustness and compare it against the deterministic check (deterministic check landed in exp 009, consistency judge in exp 010).
-- Standardize tags across every script (F-010), then use the suite for A/B comparisons (F-014) and monitoring (F-013).
-- Add a legitimate failure-plus-retry control so the efficiency judge can be checked for false positives on recovery (F-015).
-- Promote the exp 011/012 tool-call cases and three verdicts into F-014's standing A/B regression set.
+Ordered by the lab goals set 2026-11-19 — reusable demo, learning breadth, judge trust (see [LAB_BOOK.md](LAB_BOOK.md) §6):
+
+- **(reusable demo)** Standardize tags across every script (F-010), then move the known-bad controls from the pilot into the full run as a standing regression set (F-014) and promote the exp 011/012 tool-call cases with all three verdicts into it.
+- **(reusable demo, gated)** Harden the environment: pin dependency versions so the `--no-deps` recipe is reproducible (F-012) — do on the next venv rebuild, verified by a clean install.
+- **(learning breadth)** Explore RAG/retrieval tracing (F-006) or another named autolog integration (F-004) once demo work is done.
+- **(judge trust)** Add a legitimate failure-plus-retry control to check the efficiency judge for false positives on recovery (F-016).
+- **(judge trust)** Add an LLM `Correctness` check with `expected_facts` for paraphrase robustness and compare it against the deterministic check; use human-labeled examples before trusting subjective scores (deterministic check landed in exp 009, consistency judge in exp 010).
 - [x] Decide on Unity Catalog trace storage and shared vs project-specific experiment paths → resolved in [LAB_BOOK.md](LAB_BOOK.md) §7: keep the shared demo path with an env override, defer UC storage (F-011).
