@@ -1,6 +1,11 @@
-mlflow[databricks]>=3.1.0
-langgraph
-langchain
-langchain-openai
-databricks-langchain
-python-dotenv
+# Direct dependencies, pinned to the versions verified in requirements.lock.txt.
+# For a clean rebuild use ./rebuild_venv.sh, which installs the full lock with
+# --no-deps. Plain `pip install -r requirements.txt` is NOT reproducible on
+# Python 3.15: unitycatalog-langchain[databricks] pulls databricks-connect, and
+# pip backtracks into a scipy sdist that needs a Fortran compiler.
+mlflow[databricks]==3.18.0
+langgraph==1.2.22
+langchain==1.5.1
+langchain-openai==1.8.1
+databricks-langchain==0.22.0
+python-dotenv==1.2.4

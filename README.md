@@ -7,12 +7,12 @@ The example agent uses a Databricks Foundation Model API endpoint (`databricks-g
 ## Setup
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+./rebuild_venv.sh        # exact versions from requirements.lock.txt + smoke check
 cp .env.example .env
 # Option A: set DATABRICKS_HOST/TOKEN in .env, or use ~/.databrickscfg (no external LLM key)
 ```
+
+Do not use plain `pip install -r requirements.txt` to rebuild on Python 3.15 — see [Environment notes](#environment-notes--troubleshooting). An existing `.venv` is updated in place, never deleted; pass a different path (`./rebuild_venv.sh /tmp/check-venv`) to verify without touching it.
 
 ## Run
 
@@ -62,4 +62,16 @@ python evaluate_traces.py        # full GenAI evaluation over persisted traces
 - **Databricks auth:** set `DATABRICKS_HOST` + `DATABRICKS_TOKEN` in `.env`, or configure a profile in `~/.databrickscfg` (used here).
 - **LLM:** the sample uses `ChatDatabricks` against a Foundation Model endpoint (`databricks-gpt-oss-20b` by default). Change it via `DATABRICKS_MODEL_ENDPOINT` in `.env`. No external LLM key needed.
 - `mlflow.set_tracking_uri("databricks")` sends traces to your Databricks workspace (not a local MLflow server).
-- **Dependency note (Python 3.15):** `databricks-langchain` and its Databricks/Unity Catalog transitive deps were installed with `pip install --no-deps ...` because full resolution attempts to build an old scipy that needs a Fortran compiler. If you rebuild the venv, install `mlflow[databricks] langgraph langchain langchain-openai python-dotenv` normally, then add the Databricks integration packages with `--no-deps` (see experiment 002 for the list). Known-working versions in this venv: `mlflow==3.18.0`, `langgraph==1.2.22`, `langchain==1.5.1`, `langchain-openai==1.8.1`, `databricks-langchain==0.22.0`, `python-dotenv==1.2.4`, `numpy==2.5.5`, `scipy==1.18.1`, `pydantic==2.14.3`. `requirements.txt` deliberately keeps broad bounds; the decision is to pin these on the next venv rebuild (F-012), verified by a clean install.
+- **Dependencies are pinned (F-012, done 2026-11-19).** `requirements.txt` pins the six direct dependencies; `requirements.lock.txt` pins the full 160-package working set. `./rebuild_venv.sh` installs the lock with `--no-deps` and smoke-checks imports/versions. Verified on a fresh Python 3.15.2 venv. Details and known warnings are below.
+
+## Environment notes & troubleshooting
+
+| Symptom | Cause | What to do |
+| --- | --- | --- |
+| `pip install databricks-langchain` (or `pip install -r requirements.txt`) tries to build scipy and fails with "Unknown compiler(s): gfortran" on Python 3.15 | Resolver follows `unitycatalog-langchain[databricks]` into `databricks-connect`, backtracks, and picks a scipy sdist without a cp315 wheel | Use `./rebuild_venv.sh` — the exact lock with `--no-deps` bypasses resolution. Do not install `databricks-connect` to "fix" it. |
+| `pip check` reports missing `tabulate`, `nest-asyncio`, `unitycatalog-client`, `langchain-community`, `openai-agents` and version conflicts (`cloudpickle`, `typing-extensions`, `langchain`, `openai`) | The lock intentionally keeps the known-working stack; those declarations belong to unused optional branches | Expected — the working venv and a clean lock rebuild produce the *same* warnings. Do not resolve them; installing those packages downgrades LangChain/OpenAI and breaks the traced agent. |
+| PyYAML builds from source during a clean install | No cp315 wheel is published | Needs Xcode Command Line Tools (`xcode-select --install`); no Fortran compiler is required with the lock. |
+| `INFO mlflow.agent.hint: Load the mlflow-trace-instrumentation skill...` on import | Informational hint from MLflow 3.18 | Harmless; set `MLFLOW_DISABLE_AGENT_HINT=1` to silence (the rebuild script does). |
+| `npx gitnexus` crashes with `node.target is null` on npm 11 | Upstream npx/[issue #1939](https://github.com/abhigyanpatwari/GitNexus/issues/1939) | Use `node .gitnexus/run.cjs <command>`; if the runner is absent, bootstrap with `bunx gitnexus@latest analyze` or a global install. |
+| Local MLflow UI logs a 500 on `/assistant/config` (circular import) during screenshot capture | MLflow UI assistant-endpoint issue in the local replay server | Harmless — traces and screenshots render correctly; see [demo provenance](docs/demo/README.md). |
+| Accidentally edited `.env`? | It holds workspace PAT / endpoint config | `.env` is gitignored — never commit it; track only `.env.example`.

@@ -12,7 +12,8 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 
 | Symptom | Cause | Fix | Source |
 | --- | --- | --- | --- |
-| `pip install databricks-langchain` tries to build scipy and fails (Fortran compiler missing) on Python 3.15 | Full dependency resolution selects an older scipy requiring Fortran | Install Databricks integration packages with `pip install --no-deps ...`; keep the already-installed modern stack. Documented recipe in exp 002 | [002](experiments/002-foundation-model.md) |
+| `pip install databricks-langchain` tries to build scipy and fails (Fortran compiler missing) on Python 3.15 | Resolving `unitycatalog-langchain[databricks]` pulls `databricks-connect`; pip backtracks into a scipy sdist with no cp315 wheel | Install the exact 160-package `requirements.lock.txt` with `--no-deps` via `./rebuild_venv.sh`; do not install `databricks-connect` to "fix" it. Clean rebuild verified 2026-11-19. | [002](experiments/002-foundation-model.md), [README](../README.md#environment-notes--troubleshooting) |
+| `pip check` reports missing/ conflicting packages after the lock install | The declared branches of `unitycatalog-*`/`databricks-openai` are intentionally unused by this lab | Expected: the working venv and a clean lock rebuild report the same list. Do not resolve them — it would downgrade LangChain/OpenAI and break traces. | [README](../README.md#environment-notes--troubleshooting) |
 | `create_react_agent` deprecation warning | `langgraph.prebuilt.create_react_agent` moved in LangGraph V1.0 | Use `langchain.agents.create_agent` | [002](experiments/002-foundation-model.md) |
 | First trace run produced no local trace ID | ID wasn't captured or printed | Call `mlflow.flush_trace_async_logging()` then record/print the ID | [001](experiments/001-first-trace.md) |
 | Per-turn trace IDs were `None` for turn 1 and shifted for later turns | `mlflow.get_last_active_trace_id()` returns the last *completed* trace; inside an active span it is stale | Read `span.trace_id` from the live span, then flush after the span closes | [004](experiments/004-multi-turn-tracing.md) |
@@ -37,7 +38,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 ## 1. Fixes (what broke and what we changed)
 
 ### 1.1 Environment and dependencies
-- **scipy/Fortran build failure on Python 3.15.** Full `databricks-langchain` resolution fails while building an older scipy that needs a Fortran compiler. Installed the Databricks/Unity Catalog packages with `--no-deps` on top of the modern stack (scipy 1.18.1 retained). This is version-sensitive; revisit if the venv is rebuilt. (exp 002)
+- **scipy/Fortran build failure on Python 3.15 — resolved with a lock.** Full `databricks-langchain` resolution follows `unitycatalog-langchain[databricks]` → `databricks-connect`, backtracks, and selects a scipy sdist with no cp315 wheel that needs a Fortran compiler. The fix is to skip resolution entirely: `requirements.lock.txt` pins the 160-package working set and `./rebuild_venv.sh` installs it with `--no-deps`, then smoke-checks imports and versions. Verified on a fresh Python 3.15.2 venv — the rebuilt environment reproduces the working set and the same expected `pip check` warnings. Do not "repair" those warnings by installing the declared-but-unused optional packages. (exp 002, F-012)
 - **External LLM key removed.** Switched `ChatOpenAI`/`gpt-4o-mini` to `ChatDatabricks` on `databricks-gpt-oss-20b` (override via `DATABRICKS_MODEL_ENDPOINT`). Auth is only `~/.databrickscfg` DEFAULT PAT profile; `.env` is gitignored. (exp 001→002)
 - **LangGraph deprecation.** Replaced `langgraph.prebuilt.create_react_agent` with `langchain.agents.create_agent`; warning gone, tool calls and spans preserved. (exp 002)
 
@@ -140,7 +141,7 @@ A consolidated reference for the Databricks MLflow 3 GenAI tracing lab. It colle
 Ordered by the lab goals set 2026-11-19 — reusable demo, learning breadth, judge trust (see [LAB_BOOK.md](LAB_BOOK.md) §6):
 
 - **(reusable demo)** Standardize tags across every script (F-010), then move the known-bad controls from the pilot into the full run as a standing regression set (F-014) and promote the exp 011/012 tool-call cases with all three verdicts into it.
-- **(reusable demo, gated)** Harden the environment: pin dependency versions so the `--no-deps` recipe is reproducible (F-012) — do on the next venv rebuild, verified by a clean install.
+- [x] **(reusable demo, done 2026-11-19)** Harden the environment: dependency versions are pinned in `requirements.txt` + `requirements.lock.txt`, with `./rebuild_venv.sh` verified on a clean Python 3.15.2 venv (F-012).
 - **(learning breadth)** Explore RAG/retrieval tracing (F-006) or another named autolog integration (F-004) once demo work is done.
 - **(judge trust)** Add a legitimate failure-plus-retry control to check the efficiency judge for false positives on recovery (F-016).
 - **(judge trust)** Add an LLM `Correctness` check with `expected_facts` for paraphrase robustness and compare it against the deterministic check; use human-labeled examples before trusting subjective scores (deterministic check landed in exp 009, consistency judge in exp 010).
