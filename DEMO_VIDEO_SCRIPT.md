@@ -1,90 +1,93 @@
-# 30-Second 3D Infographic — MLflow GenAI Tracing
+# 30-Second 3D Infographic — What an MLflow Trace Actually Catches
 
-**Runtime:** 0:30 exactly · **Format:** 16:9, 30 fps (900 frames) · **Voiceover:** 66 words, ~26 s spoken + ~4 s pauses
+**Runtime:** 0:30 exactly · **Format:** 16:9, 30 fps (900 frames) · **Voiceover:** 62 words, ~30 s at a measured pace with pauses
+**Source:** `DEMO_SCRIPT.md` (Acts 1–5C), `DEMO_SUMMARY_AND_TALK_TRACK.md`, `docs/experiments/001`–`014`.
 
-**Source:** the MLFlowTest demo kit — `DEMO_SCRIPT.md` (Acts 1–5C), `DEMO_SUMMARY_AND_TALK_TRACK.md`, `DEMO_DECK.html` (10 slides), experiments 001–014.
+**Subject:** a real LangGraph weather agent answering "What's the weather in San Francisco?" on `databricks-gpt-oss-20b`, traced in Databricks MLflow 3. Nothing on screen is a generic stand-in: span names, counts, trace IDs, timings and verdicts are the ones from the demo kit.
 
-**Story:** one question becomes one trace; the trace becomes evidence; the evidence becomes a repeatable loop. Show the result first, prove it second, end on the loop — no terminal footage, no UI screenshots, no talking head.
-
----
-
-## Visual system
-
-- **Stage:** horizonless dark slate plane with a faint dot grid. One glowing **trace spine** stays on stage for all six scenes and accumulates meaning.
-- **Palette:** background `#0A0E1A` · model spans amber `#FFB347` · tool spans violet `#A78BFA` · manual spans frosted white · data chips cyan `#38BDF8` · error red `#EF4444` · passing gates green `#34D399`.
-- **Camera:** three-quarter view, ~25° above, slow continuous dolly-in; Scene 5 pushes closer to the gates; Scene 6 pulls back for the loop. No whip pans.
-- **Motion grammar:** build → nest → split → pulse → emit → sort → lock. No bounce, no confetti.
-- **Type:** extruded sans labels; numerals large, captions small, one line of on-screen text at a time.
+**Story:** ask a concrete question → see the real waterfall → watch it catch what a score hides. The 3D is a readable waterfall, not an abstract sculpture.
 
 ---
 
-## Scene 1 — The question (0:00–0:04)
+## On-screen assets (all literal)
 
-**Voiceover:** "One question. One trace. No external key."
+- The question tile reads **"What's the weather in San Francisco?"** — not "ONE QUESTION".
+- Span blocks carry their real names: **`ChatDatabricks`** (CHAT_MODEL), **`get_weather`** (TOOL), **`preprocess`** / **`postprocess`** (manual), and the app boundary span.
+- Numerals are the measured ones: **7 → 10 spans**, **3 traces / 1 session**, **4,304 ms**, **$0.000121**, **6 planted / 6 caught**, the **0.67 / 0.63 / 0.67 / 0.89 / 0.89** means.
+- Session and trace IDs appear verbatim: **`lab-f005-1795028845`**, **`tr-054cbbc9…`**, **`tr-0cb5f6d2…`**, **`tr-6f99921d…`**.
+- Judge names are literal: **`relevance_to_query`**, **`answers_expected_city`**, **`answers_expected_fact`**, **`self_consistent`**, **`response_length`**.
+- Palette: background `#0A0E1A` · model spans amber `#FFB347` · tool spans violet `#A78BFA` · manual spans frosted white · data chips cyan `#38BDF8` · error red `#EF4444` · passing gates green `#34D399`.
+- Camera: three-quarter view, slow continuous dolly, no whip pans. One line of on-screen text at a time; no motion-grammar jargon, no confetti.
 
-**On screen:** `ONE QUESTION → ONE TRACE`, then `NO API KEY`
+---
 
-**3D action:** A white query tile drops onto the plane. On impact it extrudes into a horizontal spine; seven short segments click into place along it. Camera begins its slow drift in.
+## Scene 1 — The real question (0:00–0:04)
+
+**Voiceover:** "San Francisco weather. One MLflow trace. No API key."
+
+**On screen:** `"What's the weather in San Francisco?"` → `ChatDatabricks · get_weather()` → `1 TRACE · NO API KEY`
+
+**3D action:** A query tile with the literal question drops onto the plane. On impact it extrudes into a waterfall containing two named blocks — an amber `ChatDatabricks` (CHAT_MODEL) and a violet `get_weather` (TOOL). Camera begins its slow drift in.
 
 **Sound:** soft click, low hum begins.
 
 ---
 
-## Scene 2 — Spans nest (0:04–0:09)
+## Scene 2 — Autolog plus your code (0:04–0:09)
 
-**Voiceover:** "Model and tool spans appear; manual spans nest around them. Seven becomes ten."
+**Voiceover:** "Autolog sees ChatDatabricks and get_weather. Manual spans take seven to ten."
 
-**On screen:** `7 → 10 SPANS`
+**On screen:** `AUTOLOG: CHAT_MODEL + TOOL` / `MANUAL: @mlflow.trace` / `7 → 10 SPANS`
 
-**3D action:** Amber blocks (model) and violet blocks (tool) light up on the spine. Translucent white hoops (manual spans) sweep in and wrap the blocks — they parent the autolog spans rather than sitting beside them. Counter ticks 7 → 10.
+**3D action:** The two named autolog blocks light up. A frosted-white app-boundary span wraps them; `preprocess` and `postprocess` slots in around the model call. Counter ticks from the baseline `tr-054cbbc9…` (7) to `tr-0cb5f6d2…` (10). The manual spans parent the autolog spans; they do not sit beside them.
 
 **Sound:** two warm pings, counter tick.
 
 ---
 
-## Scene 3 — Turns group (0:09–0:13)
+## Scene 3 — Turn three (0:09–0:13)
 
-**Voiceover:** "Three turns, one session. Each keeps its own inputs."
+**Voiceover:** "Three turns, one session. Turn three: recall, no tool call."
 
-**On screen:** `3 TURNS / 1 SESSION`
+**On screen:** `3 TRACES · 1 SESSION · lab-f005-1795028845` / `TURN 3: NO TOOL CALL`
 
-**3D action:** The spine duplicates into three parallel traces orbiting a thin session ring. A cyan memory thread runs from trace 1 to trace 3; trace 3's tool block stays dark — the answer came from history, not a tool call.
+**3D action:** The waterfall duplicates into three traces around a session ring labelled `lab-f005-1795028845`. Turn 2 changes city to NYC; turn 3 (`tr-6f99921d…`) has an empty tool slot — a cyan thread from turn 1 carries "San Francisco" forward. Fewer spans, recall intact.
 
 **Sound:** three light ticks, ring chime.
 
 ---
 
-## Scene 4 — Failure signatures (0:13–0:18)
+## Scene 4 — Two failure signatures (0:13–0:17)
 
-**Voiceover:** "Unhandled error: the whole trace turns red. Handled: one child span."
+**Voiceover:** "Unhandled: trace ERROR. Handled: span ERROR, trace OK."
 
-**On screen:** `TRACE ERROR ≠ SPAN ERROR`
+**On screen:** `UNHANDLED → TRACE ERROR` / `HANDLED → SPAN ERROR · TRACE OK`
 
-**3D action:** Two copies of the spine, separated in depth. Left: a red pulse floods the entire trace. Right: only one child block flashes red while the outer spine holds its color and stamps a small `OK` badge.
+**3D action:** Two copies of the waterfall, separated in depth. Left: an unhandled exception floods the whole trace red with an exception badge. Right: only the `get_weather` child block flashes red; the outer trace holds its colour and stamps `OK`. The caption is the distinction a pager acts on.
 
 **Sound:** low alert on the left, muted tick on the right.
 
 ---
 
-## Scene 5 — Measure and score (0:18–0:24)
+## Scene 5 — Measure, then catch (0:17–0:23)
 
-**Voiceover:** "Latency, tokens, cost ride on the trace. Six planted defects, six caught."
+**Voiceover:** "Latency, tokens, cost straight from the trace. Six planted bad answers, six caught."
 
-**On screen:** `6 / 6 CONTROL DEFECTS CAUGHT`
+**On screen:** `4,304 MS · $0.000121 · TOKENS ON TRACE` → `6 PLANTED CONTROLS · 6/6 CAUGHT` / `right city, wrong fact · self-contradiction`
 
-**3D action:** Three cyan chips — `ms`, `tokens`, `$` — lift off the spine and settle into a readout panel. The trace then flows through six gates. Four ordinary answers pass; two bad ones stop at dedicated gates labelled `FACT` and `CONSISTENCY`. Gate counter flashes 6/6.
+**3D action:** Three cyan chips — `ms`, `tokens`, `$` — lift off the waterfall and settle into a readout showing `4,304 ms` and `$0.000121`. Six labelled control cards file past a bank of gates named after the five registered scorers. Every card gets a red `CAUGHT` stamp. The last two stop specifically at `answers_expected_fact` ("sunny and 75F" for a cloudy stub) and `self_consistent` ("cloudy, but sunny and 95F"). A strip below reads `0.67 / 0.63 / 0.67 / 0.89 / 0.89` — a high mean is not the evidence; a caught control is.
 
-**Sound:** crisp gate clicks, two distinct stop tones.
+**Sound:** crisp gate clicks, two distinct stop tones, stamp thuds.
 
 ---
 
-## Scene 6 — Behavior, then the loop (0:24–0:30)
+## Scene 6 — What it did, then repeat (0:23–0:30)
 
-**Voiceover:** "Judge what the agent did: efficient can still be wrong. Trace, inspect, measure, evaluate."
+**Voiceover:** "Efficient can still be wrong. Trace, inspect, measure, evaluate — then repeat."
 
-**On screen:** `EFFICIENT ≠ CORRECT` → `TRACE → INSPECT → MEASURE → EVALUATE`
+**On screen:** `get_weather(city='SF'): EFFICIENCY YES · CORRECTNESS NO` → `TRACE → INSPECT → MEASURE → EVALUATE` / footer `gpt-oss-20b vs llama-4-maverick · identical verdicts`
 
-**3D action:** Tool-call tokens snap into a sequence on the floor. On the no-call case, a correctness gate says `no` while an efficiency gate says `yes`. Camera pulls back as four nodes — trace, inspect, measure, evaluate — rise and lock into a closed loop above the spine. End card footer: `MLFlowTest · experiments 001–014`.
+**3D action:** Tool-call tokens snap into the literal sequence `get_weather(city='SF')`. A no-call card splits into two verdict chips: efficiency `YES`, correctness `NO`. Camera pulls back as four nodes — trace, inspect, measure, evaluate — lock into a closed loop above the waterfall. End-card footer names the real endpoint A/B and the 14 experiments.
 
 **Sound:** two opposing tones, one resolving chord, hum fades out.
 
@@ -92,19 +95,19 @@
 
 ## Accuracy guardrails
 
-Every claim in the voiceover is backed by the demo kit:
-
-| Claim | Source |
+| Claim on screen | Source |
 | --- | --- |
-| "No external key" — the only credential is the Databricks CLI profile | `DEMO_SCRIPT.md` Act 1 |
-| Seven spans become ten when manual spans wrap autolog spans | Acts 1–2 |
-| Three turns, one session, each turn with its own inputs | Act 3 |
-| Trace `ERROR` vs child-span `ERROR` with trace `OK` | Act 4 |
-| Latency, tokens and cost are `TraceInfo` fields; no re-run | Act 5 |
-| Six planted controls, 6/6 caught, including right-city-wrong-fact and self-contradiction | Act 5B |
-| Efficiency says `yes` on the no-call trace where correctness says `no` | Act 5C |
+| "What's the weather in San Francisco?" · no external key; only the Databricks CLI profile | `DEMO_SCRIPT.md` Act 1 |
+| `ChatDatabricks` (CHAT_MODEL), `get_weather` (TOOL) captured by autolog | Act 1 |
+| 7 spans → 10 with one app boundary + two manual spans | Acts 1–2; `tr-054cbbc9…`, `tr-0cb5f6d2…` |
+| 3 traces, 1 session `lab-f005-…`; turn 3 recalls from history with no tool call | Act 3; `tr-6f99921d…` |
+| Unhandled → trace `ERROR`; handled → child span `ERROR`, trace `OK` | Act 4; `tr-193c937a…` |
+| 4,304 ms slowest; $0.000121 most expensive; usage is a `TraceInfo` field | Act 5 |
+| 3 clean + 6 controls, 6/6 caught; right-city-wrong-fact caught only by `answers_expected_fact`, self-contradiction by `self_consistent`; means 0.67/0.63/0.67/0.89/0.89 | Act 5B |
+| No-call trace: efficiency `yes`, correctness `no`; exact match `yes,no,no,no,no` twice | Act 5C |
+| gpt-oss-20b vs llama-4-maverick: identical verdicts, ~13% faster, ~7.5× cost, one trace per arm | experiment 013 |
 
-Do **not** add "production-ready", a 1.0 mean as proof, or a claim that the judges are deterministic. The toy-agent limit stays in the speaker notes, not the 30-second cut.
+Do **not** add "production-ready", present a 1.0 mean as proof, call the LLM judges deterministic, or imply the A/B is a stability guarantee. Keep the toy-agent limit out of the 30-second cut; it lives in the speaker notes and `docs/FINDINGS_AND_LEARNINGS.md`.
 
 ---
 
@@ -112,13 +115,13 @@ Do **not** add "production-ready", a 1.0 mean as proof, or a claim that the judg
 
 | Time | Voiceover | On screen |
 | --- | --- | --- |
-| 0:00–0:03 | "One question. One trace. No external key." | `ONE TRACE / NO API KEY` |
-| 0:03–0:08 | "Spans nest; three turns group under one session." | `7 → 10 SPANS · 3 TURNS` |
-| 0:08–0:12 | "Latency, tokens, cost from the trace. Six planted defects, six caught." | `6 / 6` |
-| 0:12–0:15 | "Trace, inspect, measure, evaluate. Repeat." | the closed loop |
+| 0:00–0:03 | "San Francisco weather. One MLflow trace, no API key." | `"What's the weather in SF?"` → `1 TRACE` |
+| 0:03–0:08 | "Autolog sees the model and tool; manual spans take seven to ten." | `ChatDatabricks · get_weather` · `7 → 10 SPANS` |
+| 0:08–0:12 | "Six planted bad answers, six caught — not a 1.0 mean." | `6/6 CONTROLS CAUGHT` |
+| 0:12–0:15 | "Efficient can still be wrong. Trace, inspect, measure, evaluate." | the closed loop |
 
 ---
 
 ## Implementation note
 
-Built as a single raea composition (React/TSX, `Camera3d`/`Mesh3d`) on one clock: 900 frames, one persistent spine mesh, scenes as time-keyed components, instanced gates. Send storyboard stills and the script to review with `raea show`.
+Single raea composition (React/TSX, `Camera3d`/`Mesh3d`) on one clock: 900 frames, one persistent waterfall, scenes as time-keyed components. Span names, IDs and numerals render as actual on-screen text — the 3D is never allowed to stand in for the subject. Send storyboard stills and the script to review with `raea show`.
