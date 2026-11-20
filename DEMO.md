@@ -37,11 +37,13 @@ Open **Tab 1** at `https://dbc-5c7ff528-845c.cloud.databricks.com/ml/experiments
 
 | File | Use it for |
 | --- | --- |
+| `docs/DEMO_AT_A_GLANCE.md` | One-page reference: systems table, the steps with commands, and the through-line |
 | `DEMO_SCRIPT.md` | Full run-of-show: pre-flight, acts, exact commands, troubleshooting |
 | `DEMO_SUMMARY_AND_TALK_TRACK.md` | One-page executive summary + 2–3 minute talk track |
-| `DEMO_VIDEO_SCRIPT.md` | 30-second 3D animated infographic script, with a 15-second cutdown |
+| `DEMO_VIDEO_SCRIPT.md` | 30-second 3D infographic script built around the real San Francisco weather trace — six scenes with literal span names, session ID, timings and control verdicts (rendered MP4 lives in the raea project folder, not in this repo) |
 | `DEMO_DECK.html` | 10-slide deck with real MLflow UI screenshots, including tool-call spans, RAG retrieval spans and the endpoint A/B arms (keys: `→` next, `N` notes, `F` full screen); images live in `docs/demo/screenshots/` |
 | `start_demo.sh` | Read-only preflight and tab opener (`--check-only`) |
+| `docs/PHASE_CLOSEOUT.md` | Phase summary and roadmap — what shipped after the lab wrap-up, what to do next |
 
 ## 3. If something goes wrong
 
