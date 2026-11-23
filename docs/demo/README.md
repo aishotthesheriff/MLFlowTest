@@ -86,6 +86,10 @@ Shot 15 selects the `retrieve_docs` span so the ranked-doc outputs are visible.
 left the previous trace selected in the MLflow SPA, which produced shots of the
 wrong run.
 
+## Animated infographic
+
+[mlflow-tracing-infographic.mp4](mlflow-tracing-infographic.mp4) is the rendered 30-second 3D infographic: 1920 × 1080, 30 fps, 900 frames. It is the v2 render from the raea composition, imported under the canonical filename; [mlflow-tracing-infographic.render.json](mlflow-tracing-infographic.render.json) is the render metadata. The source composition, storyboard, stills and v1 render remain in `~/Documents/raea/mlflowtest/projects/mlflow-tracing-infographic/`.
+
 ## Regenerate
 
 ```bash

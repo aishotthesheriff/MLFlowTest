@@ -36,7 +36,7 @@ A ~7-minute live demo of the tracing, failure, metrics, and evaluation experimen
 - [docs/DEMO_AT_A_GLANCE.md](docs/DEMO_AT_A_GLANCE.md) — one-page steps and systems reference
 - [DEMO_SCRIPT.md](DEMO_SCRIPT.md) — full run-of-show with pre-flight and troubleshooting
 - [DEMO_SUMMARY_AND_TALK_TRACK.md](DEMO_SUMMARY_AND_TALK_TRACK.md) — one-page summary and 2–3 minute talk track
-- [DEMO_VIDEO_SCRIPT.md](DEMO_VIDEO_SCRIPT.md) — 30-second 3D infographic script built around the real San Francisco weather trace
+- [DEMO_VIDEO_SCRIPT.md](DEMO_VIDEO_SCRIPT.md) — 30-second 3D infographic script built around the real San Francisco weather trace ([watch the render](docs/demo/mlflow-tracing-infographic.mp4))
 - [DEMO_DECK.html](DEMO_DECK.html) — 10-slide companion deck with real MLflow UI screenshots ([provenance](docs/demo/README.md))
 - [docs/PHASE_CLOSEOUT.md](docs/PHASE_CLOSEOUT.md) — phase summary and roadmap
 
